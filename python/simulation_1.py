@@ -1,6 +1,12 @@
+# =========================================================================== 
+#
+# This file contains -not complete yet- the first back-of-the-envelope
+# toy simulation
+#
+# =========================================================================== 
 import numpy as np
 from scipy.stats import loguniform
-from utils import temperature
+from utils import temperature_withDM
 from astropy.constants import R_jup, M_jup
 import matplotlib.pyplot as plt
 
@@ -13,7 +19,8 @@ f_model     = 1
 M_model     = 75*M_jup.value
 R_model     = R_jup.value
 heat_int    = 1.1e21 # W
-t_fiducial  = temperature(r_obs, heat_int, f=f_model, R=R_model, M=M_model, 
+t_fiducial  = temperature_withDM(r_obs, heat_int, f=f_model, R=R_model, 
+                          M=M_model, 
                           parameters=[gamma_model, 20., 0.42], epsilon=1)
 sigma_obs = 0.1*t_fiducial
 t_obs     = t_fiducial + 0.1*np.random.normal(loc=0, scale=(0.1*t_fiducial), 

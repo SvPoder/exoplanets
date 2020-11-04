@@ -5,7 +5,6 @@ from scipy.interpolate import interp1d
 import astropy.units as u
 
 
-
 def vc(Rsun, Rint, parameters):
     data = np.genfromtxt("../data/rc_e2bulge_R08.178_J_corr.dat", unpack=True)
     r = data[0]
@@ -65,7 +64,7 @@ def heat_DM(r, f=1, R=R_jup.value, M=M_jup.value, Rsun=8.178,
     return (f*np.pi*R**2*_rhoDM*_vDM*(1+3./2.*np.power(vesc/_vD, 2))*
             conversion_into_w) # W
 
-def temperature(r, heat_int, f=1, R=R_jup.value, M=M_jup.value, 
+def temperature_withDM(r, heat_int, f=1, R=R_jup.value, M=M_jup.value, 
                 parameters=[1., 20., 0.42], epsilon=1):
     """
     Exoplanet temperature : internal heating + DM heating
@@ -73,3 +72,9 @@ def temperature(r, heat_int, f=1, R=R_jup.value, M=M_jup.value,
     return (np.power(((heat_int + heat_DM(r, f=f, R=R, M=M, 
                      parameters=parameters)))/
                      (4*np.pi*R**2*sigma_sb.value*epsilon), 1./4.))
+
+def temperature(heat, R, epsilon=1):
+    return np.power(heat/(4*np.pi*R**2*sigma_sb*epsilon), 0.25)
+
+def heat(temp, R, epsilon=1):
+        return (4*np.pi*R**2*sigma_sb.value*temp**4*epsilon)
