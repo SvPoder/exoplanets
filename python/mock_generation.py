@@ -24,7 +24,7 @@ def mock_population_old(N):
 
     """
     np.random.seed(42)
-    r_obs    = loguniform.rvs(0.1, 8.178, size=200)
+    r_obs    = loguniform.rvs(0.1, 8.178, size=N)
     gamma    = 1
     f        = 1
     M        = 75*M_jup.value
