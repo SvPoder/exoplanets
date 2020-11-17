@@ -1,0 +1,37 @@
+---- Atmosphere models README ----- 
+
+Model atmosphere files from the "ATMO 2020" model set (Phillips et al. submitted)
+
+These directories contain 3 types of file
+  - Pressure-temperature structures contained within the *_structures/ directories
+  - Chemical abundance profiles contained within the *_compositions/ directories
+  - Top of the atmosphere emission spectra contained within the *_spectra/ directories
+Units are shown in the headers of the files.
+
+Models are calculated with either equilibrium chemistry or non-equilibrium 
+chemistry due to vertical mixing. In both cases we use rainout condensation. 
+
+Non-equilibrium chemistry models are calculated assuming the eddy diffusion coefficient 
+Kzz scales with surface gravity. We generate model grids with two Kzz mixing 
+relationships, which we refer to as `strong' and `weak'.
+
+The Kzz values in the `strong' case
+log(g) 	  [cm/s^2] | 2.5 3.0 3.5 4.0 4.5 5.0 5.5 
+log(Kzz)  [cm^2/s] | 10  9   8   7   6   5   4
+
+The Kzz values in the `weak' case
+log(g) 	  [cm/s^2] | 2.5 3.0 3.5 4.0 4.5 5.0 5.5 
+log(Kzz)  [cm^2/s] | 8   7   6   5   4   3   2
+
+The chemical equilibrium files are contained within the CEQ*/ directories, and the 
+`strong' and `weak' non-equilibrium chemistry models contained within the NEQ_strong*/ 
+and NEQ_weak*/ directories respectively.
+
+The files are named according to the Teff, log(g) and chemistry of the model, e.g.
+spec_T800_lg4.0_CEQ.txt contains the emission spectrum of the Teff=800K, log(g)=4.0
+chemical equilibrium model.
+
+More information about these models can be found in Phillips et al. (submitted).
+
+Please contact me at mp537@exeter.ac.uk with any questions or requests. Additional 
+models can be generated to suit demand. 
