@@ -81,10 +81,10 @@ print ("ML estimator : " , maxlike)
 
 # Save likelihood
 file_object = open("../results/likelihood", "wb")
-pickle.dump(like, file_object, protocol=)
+pickle.dump(like, file_object, protocol=2)
 file_object.close()
 
 # Save posterior
-file_object = open("../rsults/posterior", "wb")
+file_object = open("../results/posterior", "wb")
 pickle.dump(samples, file_object, protocol=2)
 file_object.close()
