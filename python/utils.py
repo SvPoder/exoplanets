@@ -69,7 +69,7 @@ def temperature_withDM(r, heat_int, f=1, R=R_jup.value, M=M_jup.value,
     """
     Exoplanet temperature : internal heating + DM heating
     """
-    return (np.power(((heat_int + heat_DM(r, f=f, R=R, M=M, 
+    return (np.power((heat_int + heat_DM(r, f=f, R=R, M=M, 
                      parameters=parameters))/
                      (4*np.pi*R**2*sigma_sb.value*epsilon), 1./4.))
 
