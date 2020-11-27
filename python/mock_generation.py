@@ -37,7 +37,7 @@ def mock_population_old(N):
     return r_obs, Tobs
 
 
-def mock_population(N, rel_unc_Tobs=0.0):
+def mock_population(N, rel_unc_Tobs=0.05):
     """
     Generate N observed exoplanets
 
@@ -92,7 +92,7 @@ def mock_population(N, rel_unc_Tobs=0.0):
     Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=N)
     return r_obs, Tobs, rel_unc_Tobs, Teff, mass, log_ages
 
-r_obs, Tobs, rel_unc_Tobs, Teff, mass, log_ages = mock_population(10000)
+#r_obs, Tobs, rel_unc_Tobs, Teff, mass, log_ages = mock_population(10000)
 
 """
 verbose=True
