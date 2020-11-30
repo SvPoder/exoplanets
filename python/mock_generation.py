@@ -57,16 +57,17 @@ def mock_population(N, rel_unc_Tobs=0.05):
     # load theoretical BD cooling model taken from Saumon & Marley '08 (fig 2)
     age = {}; logL = {}; L = {}; Teff = {}
     M   = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08]
-
+    filepath = "../data/evolution_models/SM08/"
     # TODO simplify by directly interpolating on heating/luminosity
     for mass in M:
-        data = np.genfromtxt("../data/evolution_models/SM08/saumon_marley_fig2_" + str(mass) + ".dat",
+        data = np.genfromtxt(filepath+"saumon_marley_fig2_"+str(mass) + ".dat",
                              unpack=True)
         age[mass]  = data[0]
         heat_int   = np.power(10, data[1])*L_sun.value
         Teff[mass] = temperature(heat_int, R_jup)
-    log_age  = np.linspace(6.1, 9.9, 10)
+    log_age  = np.linspace(6.1, 9.92, 10)
     _log_age = []; _mass = []; _teff = []
+
     for m in M:
         Teff_interp = interp1d(age[m], Teff[m])
         for lage in log_age:
@@ -85,6 +86,8 @@ def mock_population(N, rel_unc_Tobs=0.05):
     for i in range(N):
         Teff[i]     = Teff_interp_2d(log_ages[i], mass[i])
         heat_int[i] = heat(Teff_interp_2d(log_ages[i], mass[i]), R_jup.value)
+        #if i < 10:
+        #    print(log_ages[i], mass[i], heat_int[i])
     # Observed velocity (internal heating + DM)
     Tobs = temperature_withDM(r_obs, heat_int, f=1, R=R_jup.value, 
                            M=mass*M_sun.value, parameters=[1, 20, 0.42])

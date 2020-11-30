@@ -16,12 +16,13 @@ sigmaTobs = rel_unc_Tobs*Tobs
 age  = {}; logL = {}; L = {}; Teff = {}
 M    = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08]
 # TODO simplify by directly interpolating heating/luminosity
+filepath = "../data/evolution_models/SM08/"
 for m in M:
-    data = np.genfromtxt("../data/evolution_models/SM08/saumon_marley_fig2_" + str(m) + ".dat", 
-                         unpack=True)
-    age[m]  = data[0]
-    heat_int   = np.power(10, data[1])*L_sun.value
-    Teff[m] = temperature(heat_int, R_jup)
+    data = np.genfromtxt(filepath + "saumon_marley_fig2_" + str(m) + ".dat",
+                             unpack=True)
+    age[m]   = data[0]
+    heat_int = np.power(10, data[1])*L_sun.value
+    Teff[m]  = temperature(heat_int, R_jup)
 log_age  = np.linspace(6.1, 9.92, 10)
 _log_age = []
 _mass    = []
@@ -39,18 +40,20 @@ Teff_interp_2d = interp2d(_log_age, _mass, _teff)
 heat_int = np.zeros(len(r_obs))
 for i in range(len(r_obs)):
     heat_int[i] = heat(Teff_interp_2d(log_ages[i], mass[i]), R_jup.value)
+    #if i < 10:
+    #    print(log_ages[i], mass[i], heat_int[i])
 
 # Grid (f, gamma)
-step  = 0.1#01
+step  = 0.01
 f     = np.arange(0, 1+step, step)
-step  = 0.1#01
+step  = 0.01
 gamma = np.arange(0.01, 2+step, step)
 chi2  = np.zeros((len(gamma), len(f)))
 
 
 for i in range(len(gamma)):
     for j in range(len(f)):
-        Tmodel = temperature_withDM(r_obs, heat_int, f=f[j], M=mass*M_jup.value,
+        Tmodel = temperature_withDM(r_obs, heat_int, f=f[j], M=mass*M_sun.value,
                                 parameters=[gamma[i], 20., rho0])
 
         #print(Tobs - Tmodel, sigmaTobs)
