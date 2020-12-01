@@ -5,40 +5,14 @@ from utils import temperature, heat, temperature_withDM
 from mock_generation import mock_population
 from astropy.constants import R_jup, M_jup, M_sun, L_sun
 import pickle
+import mpi4py as MPI
+import sys
 
 # Local DM density
 rho0 = 0.42 # GeV/cm3
-
-## mock sample of BDs
-r_obs, Tobs, rel_unc_Tobs, Teff, mass, log_ages = mock_population(10000)
-
-## load theoretical BD cooling model taken from Saumon & Marley '08 (fig 2)
-age  = {}; logL = {}; L = {}; Teff = {}
-M    = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08]
-# TODO simplify by directly interpolating heating/luminosity
-for m in M:
-    data = np.genfromtxt("../data/evolution_models/SM08/saumon_marley_fig2_" + str(m) + ".dat", 
-                         unpack=True)
-    age[m]  = data[0]
-    heat_int   = np.power(10, data[1])*L_sun.value
-    Teff[m] = temperature(heat_int, R_jup)
-log_age  = np.linspace(6.1, 9.92, 10)
-_log_age = []
-_mass    = []
-_teff    = []
-for m in M:
-    Teff_interp = interp1d(age[m], Teff[m])
-    for lage in log_age:
-        _log_age.append(lage)
-        _mass.append(m)
-        _teff.append(Teff_interp(lage))
-# effective temperature (wo DM heating) vs log(age) and mass exoplanet
-Teff_interp_2d = interp2d(_log_age, _mass, _teff)
-
-## calculate predictic intrinsic heat flow for mock BDs
-heat_int = np.zeros(len(r_obs))
-for i in range(len(r_obs)):
-    heat_int[i] = heat(Teff_interp_2d(log_ages[i], mass[i]), R_jup.value)
+# Level of uncertainty in Tobs
+rel_unc = float(sys.argv[1])
+print(rel_unc)
 
 # --------- MCMC fitting -> change to another file -----------------------
 def lnprior(p):
@@ -63,6 +37,45 @@ def lnprob(p, robs, Tobs, rel_unc_Tobs, heat_int, mass):
     return lp + residual(p, robs, Tobs, rel_unc_Tobs, heat_int, mass)
 # ------------------------------------------------------------------------
 
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
+if rank==0:
+    ## load theoretical BD cooling model taken from Saumon & Marley '08 (fig 2)
+    age  = {}; logL = {}; L = {}; Teff = {}
+    M    = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08]
+    # TODO simplify by directly interpolating heating/luminosity
+    for m in M:
+        data = np.genfromtxt("./data/saumon_marley_fig2_" + str(m) + ".dat", 
+                         unpack=True)
+        age[m]  = data[0]
+        heat_int   = np.power(10, data[1])*L_sun.value
+        Teff[m] = temperature(heat_int, R_jup)
+    log_age  = np.linspace(6.1, 9.92, 10)
+    _log_age = []
+    _mass    = []
+    _teff    = []
+    for m in M:
+        Teff_interp = interp1d(age[m], Teff[m])
+        for lage in log_age:
+            _log_age.append(lage)
+            _mass.append(m)
+            _teff.append(Teff_interp(lage))
+    # effective temperature (wo DM heating) vs log(age) and mass exoplanet
+    Teff_interp_2d = interp2d(_log_age, _mass, _teff)
+else:
+    Teff_interp_2d=None
+Teff_interp_2d = comm.bcast(Teff_interp_2d, root=0)
+
+## mock sample of BDs
+r_obs, Tobs, rel_unc_Tobs, Teff, mass, log_ages = mock_population(10000, 
+        rel_unc_Tobs=rel_unc)
+
+## calculate predictic intrinsic heat flow for mock BDs
+heat_int = np.zeros(len(r_obs))
+for i in range(len(r_obs)):
+    heat_int[i] = heat(Teff_interp_2d(log_ages[i], mass[i]), R_jup.value)
+
 print("Relative uncertainty in Tobs is ", rel_unc_Tobs)
 
 ndim     = 2
@@ -80,11 +93,11 @@ maxlike = sampler.flatchain[np.argmax(sampler.flatlnprobability)]
 print ("ML estimator : " , maxlike)
 
 # Save likelihood
-file_object = open("../results/bayesian/likelihood_game0", "wb")
+file_object = open("./results/likelihood_game0_v" + str(rank), "wb")
 pickle.dump(like, file_object, protocol=2)
 file_object.close()
 
 # Save posterior
-file_object = open("../results/bayesian/posterior_game0", "wb")
+file_object = open("./results/posterior_game0_v" + str(rank), "wb")
 pickle.dump(samples, file_object, protocol=2)
 file_object.close()

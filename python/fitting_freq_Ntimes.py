@@ -8,10 +8,6 @@ import pickle
 # Local DM density
 rho0 = 0.42 # GeV/cm3
 
-## mock sample of BDs
-r_obs, Tobs, rel_unc_Tobs, Teff, mass, log_ages = mock_population(10000)
-sigmaTobs = rel_unc_Tobs*Tobs
-
 ## load theoretical BD cooling model taken from Saumon & Marley '08 (fig 2)
 age  = {}; logL = {}; L = {}; Teff = {}
 M    = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08]
@@ -36,30 +32,31 @@ for m in M:
 # effective temperature (wo DM heating) vs log(age) and mass exoplanet
 Teff_interp_2d = interp2d(_log_age, _mass, _teff)
 
-## calculate predictic intrinsic heat flow for mock BDs
-heat_int = np.zeros(len(r_obs))
-for i in range(len(r_obs)):
-    heat_int[i] = heat(Teff_interp_2d(log_ages[i], mass[i]), R_jup.value)
-    #if i < 10:
-    #    print(log_ages[i], mass[i], heat_int[i])
-
 # Grid (f, gamma)
 step  = 0.01
 f     = np.arange(0, 1+step, step)
 step  = 0.01
 gamma = np.arange(0.01, 2+step, step)
-chi2  = np.zeros((len(gamma), len(f)))
 
+for k in range(100):
+    print(k)
+    ## mock sample of BDs
+    r_obs, Tobs, rel_unc_Tobs, Teff, mass, log_ages = mock_population(10000)
+    sigmaTobs = rel_unc_Tobs*Tobs
 
-for i in range(len(gamma)):
-    for j in range(len(f)):
-        Tmodel = temperature_withDM(r_obs, heat_int, f=f[j], M=mass*M_sun.value,
+    ## calculate predictic intrinsic heat flow for mock BDs
+    heat_int = np.zeros(len(r_obs))
+    for i in range(len(r_obs)):
+        heat_int[i] = heat(Teff_interp_2d(log_ages[i], mass[i]), R_jup.value)
+
+    chi2  = np.zeros((len(gamma), len(f)))
+
+    for i in range(len(gamma)):
+        for j in range(len(f)):
+            Tmodel = temperature_withDM(r_obs, heat_int, f=f[j],
+                                M=mass*M_sun.value,
                                 parameters=[gamma[i], 20., rho0])
+            chi2[i][j] = np.sum(np.power((Tobs - Tmodel)/sigmaTobs, 2))
 
-        #print(Tobs - Tmodel, sigmaTobs)
-        chi2[i][j] = np.sum(np.power((Tobs - Tmodel)/sigmaTobs, 2))
-
-print("Relative uncertainty in Tobs is ", rel_unc_Tobs)
-
-output = open("../results/frequentist/chi2_game0_v0.dat", "wb")
-np.save(output, chi2)
+    output = open("../results/frequentist/chi2_game0_v"+str(k+1)+".dat", "wb")
+    np.save(output, chi2)

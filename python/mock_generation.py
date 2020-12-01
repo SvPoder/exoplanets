@@ -33,7 +33,7 @@ def mock_population_old(N):
     Tobs     = temperature_withDM(r_obs, heat_int, f=f, R=R, M=M,
                           parameters=[gamma, 20., 0.42], epsilon=1)
     # TODO i think should not multipy by 0.1 - CHECK!!!!
-    Tobs     = Tobs + 0.1*np.random.normal(loc=0, scale=(0.1*Tobs), size=N)
+    #Tobs     = Tobs + 0.1*np.random.normal(loc=0, scale=(0.1*Tobs), size=N)
     return r_obs, Tobs
 
 
@@ -51,7 +51,7 @@ def mock_population(N, rel_unc_Tobs=0.05):
        unifrom age distribution between 1-10 Gyr
     5) Tobs has relative uncertainty rel_unc_Tobs - NOT YET!!
     """
-    np.random.seed(42)
+    #np.random.seed(42)
     # galactocentric radius of simulated exoplanets
     r_obs = loguniform.rvs(0.1, 8.178, size=N)
     # load theoretical BD cooling model taken from Saumon & Marley '08 (fig 2)
