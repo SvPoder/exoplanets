@@ -18,25 +18,6 @@ import bokeh.palettes
 # TODO update for g <=0 random power law generation (see utils.py)
 
 
-def mock_population_old(N):
-    """
-    Generate N observed exoplanets
-
-    """
-    np.random.seed(42)
-    r_obs    = loguniform.rvs(0.1, 8.178, size=N)
-    gamma    = 1
-    f        = 1
-    M        = 75*M_jup.value
-    R        = R_jup.value
-    heat_int = 1.1e21 # W
-    Tobs     = temperature_withDM(r_obs, heat_int, f=f, R=R, M=M,
-                          parameters=[gamma, 20., 0.42], epsilon=1)
-    # TODO i think should not multipy by 0.1 - CHECK!!!!
-    #Tobs     = Tobs + 0.1*np.random.normal(loc=0, scale=(0.1*Tobs), size=N)
-    return r_obs, Tobs
-
-
 def mock_population(N, rel_unc_Tobs=0.05):
     """
     Generate N observed exoplanets

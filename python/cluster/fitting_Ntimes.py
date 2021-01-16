@@ -5,10 +5,13 @@ from utils import temperature, heat, temperature_withDM
 from mock_generation import mock_population
 from astropy.constants import R_jup, M_jup, M_sun, L_sun
 import pickle
+import sys
 from mpi4py import MPI
 
 # Local DM density
 rho0 = 0.42 # GeV/cm3
+
+rel_unc_Tobs = float(sys.argv[1])
 
 # --------- MCMC fitting -> change to another file -----------------------
 def lnprior(p):
@@ -64,7 +67,8 @@ else:
 Teff_interp_2d = comm.bcast(Teff_interp_2d, root=0)
 
 ## mock sample of BDs
-r_obs, Tobs, rel_unc_Tobs, Teff, mass, log_ages = mock_population(10000)
+r_obs, Tobs, rel_unc_Tobs, Teff, mass, log_ages = mock_population(10000, 
+                                                                  rel_unc_Tobs)
 
 ## calculate predictic intrinsic heat flow for mock BDs
 heat_int = np.zeros(len(r_obs))
@@ -88,11 +92,13 @@ maxlike = sampler.flatchain[np.argmax(sampler.flatlnprobability)]
 print ("ML estimator : " , maxlike)
 
 # Save likelihood
-file_object = open("./results/likelihood_game0_v" + str(rank), "wb")
+file_object = open("./results/likelihood_game0_uncTobs_" + str(rel_unc_Tobs) 
+                   + "v" + str(rank), "wb")
 pickle.dump(like, file_object, protocol=2)
 file_object.close()
 
 # Save posterior
-file_object = open("./results/posterior_game0_v" + str(rank), "wb")
+file_object = open("./results/posterior_game0_uncTobs_" + str(rel_unc_Tobs)
+                   + "v" + str(rank), "wb")
 pickle.dump(samples, file_object, protocol=2)
 file_object.close()
