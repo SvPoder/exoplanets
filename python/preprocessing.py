@@ -54,7 +54,7 @@ def statistics(filepath, rel_unc_Tobs, rank=100, D=2):
 
 if __name__ == '__main__':
     filepath     = "../results/bayesian/"
-    rel_unc_Tobs = [0.1]
+    rel_unc_Tobs = [0.01, 0.02, 0.03, 0.05, 0.1, 0.25, 0.5]
     for rel_unc in rel_unc_Tobs:
         statistics(filepath, rel_unc)
 
