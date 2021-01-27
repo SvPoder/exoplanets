@@ -33,7 +33,7 @@ def statistics(filepath, nBDs, rank=100, D=2):
             MAP[j][i]    = _bins[np.argmax(_n)]
             ML[j][i]     = samples[:, j][np.argmax(like)]
 
-    output = open(("../results/bayesian/statistics_game0_nBDs_%i.dat" %nBDs), 
+    output = open((filepath + "statistics_game0_nBDs_%i.dat" %nBDs), 
                   "w")
     for i in range(rank):
         for j in range(D):
@@ -52,9 +52,9 @@ def statistics(filepath, nBDs, rank=100, D=2):
 
 
 if __name__ == '__main__':
-    filepath     = "../results/bayesian/"
+    filepath     = "../results/bayesian/game0/f1gamma1/"
     #rel_unc_Tobs = [0.01, 0.02, 0.03, 0.05, 0.1, 0.25, 0.5]
-    nBDs = [1000, 5000, 20000, 50000]
+    nBDs = [100000]#[1000, 5000, 20000, 50000]
     for n in nBDs:
         statistics(filepath, n)
 
