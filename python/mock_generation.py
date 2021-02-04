@@ -37,7 +37,8 @@ def mock_population_old(N):
     return r_obs, Tobs
 
 
-def mock_population(N, rel_unc_Tobs=0.05):
+def mock_population(N, rel_unc_Tobs, f_true, gamma_true, 
+                    rs_true=20, rho0_true=0.42):
     """
     Generate N observed exoplanets
 
@@ -57,7 +58,7 @@ def mock_population(N, rel_unc_Tobs=0.05):
     # load theoretical BD cooling model taken from Saumon & Marley '08 (fig 2)
     age = {}; logL = {}; L = {}; Teff = {}
     M   = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08]
-    filepath = "../data/evolution_models/SM08/"
+    filepath = "./data/"
     # TODO simplify by directly interpolating on heating/luminosity
     for mass in M:
         data = np.genfromtxt(filepath+"saumon_marley_fig2_"+str(mass) + ".dat",
@@ -78,7 +79,7 @@ def mock_population(N, rel_unc_Tobs=0.05):
     Teff_interp_2d = interp2d(_log_age, _mass, _teff)
     # Ages and masses of simulated BDs
     log_ages = np.random.uniform(9., 9.92, N) # [yr] / [1-10 Gyr]
-    mass     = random_powerlaw(14, 55, -0.01, N)
+    mass     = random_powerlaw(-0.6, N, Mmin=14, Mmax=55)
     mass     = mass*M_jup/M_sun # [Msun]
     # Mapping (mass, age) -> Teff -> internal heat flow (no DM)
     heat_int = np.zeros(N)
@@ -89,8 +90,9 @@ def mock_population(N, rel_unc_Tobs=0.05):
         #if i < 10:
         #    print(log_ages[i], mass[i], heat_int[i])
     # Observed velocity (internal heating + DM)
-    Tobs = temperature_withDM(r_obs, heat_int, f=1, R=R_jup.value, 
-                           M=mass*M_sun.value, parameters=[1, 20, 0.42])
+    Tobs = temperature_withDM(r_obs, heat_int, f=f_true, R=R_jup.value, 
+                           M=mass*M_sun.value, 
+                           parameters=[gamma_true, rs_true, rho0_true])
     # add 10% relative uncertainty
     Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=N)
     return r_obs, Tobs, rel_unc_Tobs, Teff, mass, log_ages

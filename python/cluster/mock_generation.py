@@ -15,8 +15,6 @@ from matplotlib import rc
 rc('font', family='times new roman', size=22.)
 import bokeh.palettes
 
-# TODO update for g <=0 random power law generation (see utils.py)
-
 
 def mock_population(N, rel_unc_Tobs, f_true, gamma_true, 
                     rs_true=20, rho0_true=0.42):
@@ -60,7 +58,7 @@ def mock_population(N, rel_unc_Tobs, f_true, gamma_true,
     Teff_interp_2d = interp2d(_log_age, _mass, _teff)
     # Ages and masses of simulated BDs
     log_ages = np.random.uniform(9., 9.92, N) # [yr] / [1-10 Gyr]
-    mass     = random_powerlaw(14, 55, -0.01, N)
+    mass     = random_powerlaw(-0.6, N, Mmin=14, Mmax=55)
     mass     = mass*M_jup/M_sun # [Msun]
     # Mapping (mass, age) -> Teff -> internal heat flow (no DM)
     heat_int = np.zeros(N)

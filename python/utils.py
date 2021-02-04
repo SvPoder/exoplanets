@@ -6,10 +6,10 @@ import astropy.units as u
 
 
 def vc(Rsun, Rint, parameters):
-    data = np.genfromtxt("../data/rc_e2bulge_R08.178_J_corr.dat", unpack=True)
+    data = np.genfromtxt("./data/rc_e2bulge_R08.178_J_corr.dat", unpack=True)
     r = data[0]
     vB = data[1]
-    data = np.genfromtxt("../data/rc_hgdisc_R08.178_corr.dat", unpack=True)
+    data = np.genfromtxt("./data/rc_hgdisc_R08.178_corr.dat", unpack=True)
     vD = data[1]
     vDM = vgNFW(Rsun, r, parameters)
     vtot = np.sqrt(np.power(vB, 2) + np.power(vD, 2)+ np.power(vDM, 2))
