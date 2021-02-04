@@ -18,7 +18,8 @@ import bokeh.palettes
 # TODO update for g <=0 random power law generation (see utils.py)
 
 
-def mock_population(N, rel_unc_Tobs=0.05):
+def mock_population(N, rel_unc_Tobs, f_true, gamma_true, 
+                    rs_true=20, rho0_true=0.42):
     """
     Generate N observed exoplanets
 
@@ -70,8 +71,9 @@ def mock_population(N, rel_unc_Tobs=0.05):
         #if i < 10:
         #    print(log_ages[i], mass[i], heat_int[i])
     # Observed velocity (internal heating + DM)
-    Tobs = temperature_withDM(r_obs, heat_int, f=1, R=R_jup.value, 
-                           M=mass*M_sun.value, parameters=[1, 20, 0.42])
+    Tobs = temperature_withDM(r_obs, heat_int, f=f_true, R=R_jup.value, 
+                           M=mass*M_sun.value, 
+                           parameters=[gamma_true, rs_true, rho0_true])
     # add 10% relative uncertainty
     Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=N)
     return r_obs, Tobs, rel_unc_Tobs, Teff, mass, log_ages

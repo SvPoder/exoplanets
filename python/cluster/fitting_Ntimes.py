@@ -8,10 +8,15 @@ import pickle
 import sys
 from mpi4py import MPI
 
+# Scale radius
+rs = 20.
 # Local DM density
 rho0 = 0.42 # GeV/cm3
 
-rel_unc_Tobs = float(sys.argv[1])
+nBDs         = int(sys.argv[1])
+rel_unc_Tobs = float(sys.argv[2])
+f_true       = float(sys.argv[3])
+gamma_true   = float(sys.argv[4])
 
 # --------- MCMC fitting -> change to another file -----------------------
 def lnprior(p):
@@ -23,7 +28,7 @@ def lnprior(p):
 def residual(p, robs, Tobs, rel_unc_Tobs, heat_int, mass):
     f, gamma = p
     Tmodel = temperature_withDM(robs, heat_int, f=f, M=mass*M_sun.value, 
-                                parameters=[gamma, 20., rho0])
+                                parameters=[gamma, rs, rho0])
     return -0.5*np.sum(((Tmodel-Tobs)/(rel_unc_Tobs*Tobs))**2.)
 
 
@@ -67,8 +72,10 @@ else:
 Teff_interp_2d = comm.bcast(Teff_interp_2d, root=0)
 
 ## mock sample of BDs
-r_obs, Tobs, rel_unc_Tobs, Teff, mass, log_ages = mock_population(10000, 
-                                                                  rel_unc_Tobs)
+r_obs, Tobs, rel_unc_Tobs, Teff, mass, log_ages = mock_population(nBDs,
+                                                                  rel_unc_Tobs,
+                                                                  f_true, 
+                                                                  gamma_true)
 
 ## calculate predictic intrinsic heat flow for mock BDs
 heat_int = np.zeros(len(r_obs))
@@ -92,13 +99,17 @@ maxlike = sampler.flatchain[np.argmax(sampler.flatlnprobability)]
 print ("ML estimator : " , maxlike)
 
 # Save likelihood
-file_object = open("./results/likelihood_game0_uncTobs_" + str(rel_unc_Tobs) 
+file_object = open("./results/likelihood_" + 
+                   ("ex1_N%i_relunc%.2f_f%.1fgamma%.1f" %(nBDs, rel_unc_Tobs, f_true, gamma_true))
                    + "v" + str(rank), "wb")
 pickle.dump(like, file_object, protocol=2)
 file_object.close()
 
 # Save posterior
-file_object = open("./results/posterior_game0_uncTobs_" + str(rel_unc_Tobs)
+file_object = open("./results/posterior_" + 
+                   ("ex1_N%i_relunc%.2f_f%.1fgamma%.1f" %(nBDs, rel_unc_Tobs, f_true, gamma_true))
                    + "v" + str(rank), "wb")
 pickle.dump(samples, file_object, protocol=2)
 file_object.close()
+
+
