@@ -79,11 +79,16 @@ def temperature(heat, R, epsilon=1):
 def heat(temp, R, epsilon=1):
         return (4*np.pi*R**2*sigma_sb.value*temp**4*epsilon)
 
-# TODO update for g <=0
-def random_powerlaw(a, b, g, size=1):
+def random_powerlaw(alpha, size, Mmin=14, Mmax=55):
     """
-    Power-law generator for pdf(x) = x^{g-1} for a<=x<=b and g<0
+    Power-law generator
     """
-    r = np.random.random(size=size)
-    ag, bg = a**g, b**g
-    return (ag + (bg - ag)*r)**(1./g)
+    y = np.random.uniform(0, 1, size=size)
+    return ((Mmax**(alpha+1) - Mmin**(alpha+1))*y + Mmin**(alpha+1))**(1./(alpha+1))
+#def random_powerlaw(a, b, g, size=1):
+#    """
+#    Power-law generator for pdf(x) = x^{g-1} for a<=x<=b and g<0
+#    """
+#    r = np.random.random(size=size)
+#    ag, bg = a**g, b**g
+#    return (ag + (bg - ag)*r)**(1./g)
