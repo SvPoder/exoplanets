@@ -58,7 +58,7 @@ def mock_population(N, rel_unc_Tobs, f_true, gamma_true,
     # load theoretical BD cooling model taken from Saumon & Marley '08 (fig 2)
     age = {}; logL = {}; L = {}; Teff = {}
     M   = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08]
-    filepath = "./data/"
+    filepath = "../data/evolution_models/SM08/"
     # TODO simplify by directly interpolating on heating/luminosity
     for mass in M:
         data = np.genfromtxt(filepath+"saumon_marley_fig2_"+str(mass) + ".dat",
