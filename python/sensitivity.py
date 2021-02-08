@@ -24,13 +24,35 @@ def sensitivity(Tobs, Teff, alpha=0.05):
 
     p, bins, _ = plt.hist(Teff, bins=40, density=True, cumulative=True)
     p          = np.insert(p, 0, 0)
+    p    = np.insert(p, len(p), 1)
+    bins = np.insert(bins, len(bins), bins[len(bins)-1]+1000)
+    x0   = bins[1]
+    p    = np.insert(p, 0, 0)
+    bins = np.insert(bins, 0, 0)
+
     p_interp   = interp1d(bins, p)
     y_h        = np.linspace(0, 1, 11) # total number of bins = 10
     bins_equal = []
     for y in y_h:
-        bins_equal.append(newton(interp_find_x, 700, args=(y, p_interp)))
-    # n_th = 0.10*nBDs (or similar)
-    n_th, _ = np.histogram(Teff, bins=bins_equal) # theoretical counts
+        try: 
+            #print(y, newton(interp_find_x, x0, args=(y, )))
+            root = newton(interp_find_x, x0, args=(y, p_interp,))
+        except:
+            if y == y_h[-1]:
+                #print(y)
+                root = bins[-2]
+            else:
+                x0 = x0 + 50
+                #print("except", y, newton(interp_find_x, x0, args=(y, )))
+                root = newton(interp_find_x, x0, args=(y, p_interp, ))
+        x0 = root
+        bins_equal.append(root)
+    try:
+        # n_th = 0.10*nBDs (or similar)
+        n_th, _ = np.histogram(Teff, bins=bins_equal) # theoretical counts
+    except ValueError:
+        print(bins_equal)
+        sys.exit(-1)
     #print(n_th)
     n, _    = np.histogram(Tobs, bins=bins_equal)
 
@@ -51,14 +73,14 @@ if __name__ == '__main__':
     rel_unc = 0.05
     f     = [0.1, 0.3, 0.5, 0.7, 0.9]
     gamma = [0.2, 0.6, 1, 1.4, 1.8]
-    
+    rank  = 100
+
     for _f in f:
         for _g in gamma:
             print("====== nBDS=%i, rel_unc=%.2f, f=%.1f, gamma=%.1f" 
                     %(nBDs, rel_unc, _f, _g))
-            N = 2
-            _bool = np.ones(N)*100
-            for i in range(N):
+            _bool = np.ones(rank)*100
+            for i in range(rank):
                 _, Tobs, _, Teff, _, _ = mock_population(nBDs, rel_unc, _f, _g)
                 _bool[i] = sensitivity(Tobs, Teff)
             print("Accepted H0 : %i" %int(np.sum(_bool)))
