@@ -4,3 +4,5 @@ scipy==1.5.4
 astropy==4.2
 matplotlib==3.3.3
 bokeh==2.2.3
+emcee==3.0.2
+mpi4py
