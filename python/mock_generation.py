@@ -1,21 +1,14 @@
-# =========================================================================== 
+# ===========================================================================
 #
-# This file contains functions for simulating a mock population of brown 
+# This file contains functions for simulating a mock population of brown
 # dwarfs (BDs)
 #
-# =========================================================================== 
+# ===========================================================================
 import numpy as np
 from scipy.stats import loguniform
 from scipy.interpolate import interp1d, interp2d
 from astropy.constants import L_sun, R_jup, M_jup, M_sun
 from utils import temperature, heat, temperature_withDM, random_powerlaw
-# Test
-import matplotlib.pyplot as plt
-from matplotlib import rc
-rc('font', family='times new roman', size=22.)
-import bokeh.palettes
-
-# TODO update for g <=0 random power law generation (see utils.py)
 
 
 def mock_population_old(N):
@@ -37,14 +30,14 @@ def mock_population_old(N):
     return r_obs, Tobs
 
 
-def mock_population(N, rel_unc_Tobs, f_true, gamma_true, 
+def mock_population(N, rel_unc_Tobs, f_true, gamma_true,
                     rs_true=20, rho0_true=0.42):
     """
     Generate N observed exoplanets
 
     Assumptions
     -----------
-    1) N observed exoplanets distributed w/ log uniform probability within 
+    1) N observed exoplanets distributed w/ log uniform probability within
        0.1 and 8.178
     2) (All) exoplanets radius = Rjup
     3) BD evolution model taken from fig 2 of Saumon & Marley'08
@@ -90,8 +83,8 @@ def mock_population(N, rel_unc_Tobs, f_true, gamma_true,
         #if i < 10:
         #    print(log_ages[i], mass[i], heat_int[i])
     # Observed velocity (internal heating + DM)
-    Tobs = temperature_withDM(r_obs, heat_int, f=f_true, R=R_jup.value, 
-                           M=mass*M_sun.value, 
+    Tobs = temperature_withDM(r_obs, heat_int, f=f_true, R=R_jup.value,
+                           M=mass*M_sun.value,
                            parameters=[gamma_true, rs_true, rho0_true])
     # add 10% relative uncertainty
     Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=N)
@@ -115,7 +108,7 @@ if verbose:
     mass_bins = np.linspace(14, 75, 6)*M_jup/M_sun
     for i in range(len(mass_bins)-1):
         pos = np.where((mass > mass_bins[i]) & (mass < mass_bins[i+1]))
-        ax[1, 0].scatter(r_obs[pos], Tobs[pos], s=5, color=colors[i], 
+        ax[1, 0].scatter(r_obs[pos], Tobs[pos], s=5, color=colors[i],
                      label=("%i - %i Mjup" %(np.round(mass_bins[i]*M_sun/M_jup), np.round(mass_bins[i+1]*M_sun/M_jup))))
     ax[1, 0].set_ylabel("Tobs [K]")
     ax[1, 0].set_xlabel("galactocentric distance [kpc]")
@@ -124,8 +117,8 @@ if verbose:
     age_bins = np.linspace(9, 9.92, 6)
     for i in range(len(age_bins)-1):
         pos = np.where((log_ages > age_bins[i]) & (log_ages < age_bins[i+1]))
-        ax[1, 1].scatter(r_obs[pos], Tobs[pos], s=5, color=colors[i], 
-                     label=("%.1f - %.1f Gyr" %(10**age_bins[i]/10**9, 10**age_bins[i+1]/10**9)))    
+        ax[1, 1].scatter(r_obs[pos], Tobs[pos], s=5, color=colors[i],
+                     label=("%.1f - %.1f Gyr" %(10**age_bins[i]/10**9, 10**age_bins[i+1]/10**9)))
     ax[1, 1].set_xlabel("galactocentric distance [kpc]")
     ax[1, 1].legend(frameon=True, fontsize=14)
     plt.show()
@@ -135,49 +128,49 @@ if verbose:
     age_bins = np.linspace(9, 9.92, 4)
 
     i = 0
-    pos = np.where((mass > mass_bins[i]) & (mass < mass_bins[i+1]) & 
+    pos = np.where((mass > mass_bins[i]) & (mass < mass_bins[i+1]) &
                (log_ages > age_bins[0]) & (log_ages < age_bins[1]))
-    ax[0, 0].scatter(r_obs[pos], Tobs[pos]-Teff[pos], s=5, 
-                label=("%i - %i Mjup / %.1f - %.1f Gyr" 
-                       %(np.round(mass_bins[i]*M_sun/M_jup), np.round(mass_bins[i+1]*M_sun/M_jup), 
+    ax[0, 0].scatter(r_obs[pos], Tobs[pos]-Teff[pos], s=5,
+                label=("%i - %i Mjup / %.1f - %.1f Gyr"
+                       %(np.round(mass_bins[i]*M_sun/M_jup), np.round(mass_bins[i+1]*M_sun/M_jup),
                          10**age_bins[i]/10**9, 10**age_bins[i+1]/10**9)))
 
-    pos = np.where((mass > mass_bins[i]) & (mass < mass_bins[i+1]) & 
+    pos = np.where((mass > mass_bins[i]) & (mass < mass_bins[i+1]) &
                (log_ages > age_bins[2]) & (log_ages < age_bins[3]))
-    ax[0, 1].scatter(r_obs[pos], Tobs[pos]-Teff[pos], s=5, 
-                label=("%i - %i Mjup / %.1f - %.1f Gyr" 
-                       %(np.round(mass_bins[i]*M_sun/M_jup), np.round(mass_bins[i+1]*M_sun/M_jup), 
+    ax[0, 1].scatter(r_obs[pos], Tobs[pos]-Teff[pos], s=5,
+                label=("%i - %i Mjup / %.1f - %.1f Gyr"
+                       %(np.round(mass_bins[i]*M_sun/M_jup), np.round(mass_bins[i+1]*M_sun/M_jup),
                          10**age_bins[2]/10**9, 10**age_bins[3]/10**9)))
 
 
     i = 1
-    pos = np.where((mass > mass_bins[i]) & (mass < mass_bins[i+1]) & 
+    pos = np.where((mass > mass_bins[i]) & (mass < mass_bins[i+1]) &
                (log_ages > age_bins[0]) & (log_ages < age_bins[1]))
-    ax[1, 0].scatter(r_obs[pos], Tobs[pos]-Teff[pos], s=5, 
-                label=("%i - %i Mjup / %.1f - %.1f Gyr" 
-                       %(np.round(mass_bins[i]*M_sun/M_jup), np.round(mass_bins[i+1]*M_sun/M_jup), 
+    ax[1, 0].scatter(r_obs[pos], Tobs[pos]-Teff[pos], s=5,
+                label=("%i - %i Mjup / %.1f - %.1f Gyr"
+                       %(np.round(mass_bins[i]*M_sun/M_jup), np.round(mass_bins[i+1]*M_sun/M_jup),
                          10**age_bins[i]/10**9, 10**age_bins[i+1]/10**9)))
 
-    pos = np.where((mass > mass_bins[i]) & (mass < mass_bins[i+1]) & 
+    pos = np.where((mass > mass_bins[i]) & (mass < mass_bins[i+1]) &
                (log_ages > age_bins[2]) & (log_ages < age_bins[3]))
-    ax[1, 1].scatter(r_obs[pos], Tobs[pos]-Teff[pos], s=5, 
-                label=("%i - %i Mjup / %.1f - %.1f Gyr" 
-                       %(np.round(mass_bins[i]*M_sun/M_jup), np.round(mass_bins[i+1]*M_sun/M_jup), 
+    ax[1, 1].scatter(r_obs[pos], Tobs[pos]-Teff[pos], s=5,
+                label=("%i - %i Mjup / %.1f - %.1f Gyr"
+                       %(np.round(mass_bins[i]*M_sun/M_jup), np.round(mass_bins[i+1]*M_sun/M_jup),
                          10**age_bins[2]/10**9, 10**age_bins[3]/10**9)))
 
     i = 2
-    pos = np.where((mass > mass_bins[i]) & (mass < mass_bins[i+1]) & 
+    pos = np.where((mass > mass_bins[i]) & (mass < mass_bins[i+1]) &
                (log_ages > age_bins[0]) & (log_ages < age_bins[1]))
-    ax[2, 0].scatter(r_obs[pos], Tobs[pos]-Teff[pos], s=5, 
-                label=("%i - %i Mjup / %.1f - %.1f Gyr" 
-                       %(np.round(mass_bins[i]*M_sun/M_jup), np.round(mass_bins[i+1]*M_sun/M_jup), 
+    ax[2, 0].scatter(r_obs[pos], Tobs[pos]-Teff[pos], s=5,
+                label=("%i - %i Mjup / %.1f - %.1f Gyr"
+                       %(np.round(mass_bins[i]*M_sun/M_jup), np.round(mass_bins[i+1]*M_sun/M_jup),
                          10**age_bins[i]/10**9, 10**age_bins[i+1]/10**9)))
 
-    pos = np.where((mass > mass_bins[i]) & (mass < mass_bins[i+1]) & 
+    pos = np.where((mass > mass_bins[i]) & (mass < mass_bins[i+1]) &
                (log_ages > age_bins[2]) & (log_ages < age_bins[3]))
-    ax[2, 1].scatter(r_obs[pos], Tobs[pos]-Teff[pos], s=5, 
-                label=("%i - %i Mjup / %.1f - %.1f Gyr" 
-                       %(np.round(mass_bins[i]*M_sun/M_jup), np.round(mass_bins[i+1]*M_sun/M_jup), 
+    ax[2, 1].scatter(r_obs[pos], Tobs[pos]-Teff[pos], s=5,
+                label=("%i - %i Mjup / %.1f - %.1f Gyr"
+                       %(np.round(mass_bins[i]*M_sun/M_jup), np.round(mass_bins[i+1]*M_sun/M_jup),
                          10**age_bins[2]/10**9, 10**age_bins[3]/10**9)))
 
     for i in range(3):
