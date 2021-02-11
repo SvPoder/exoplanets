@@ -8,8 +8,6 @@ import pickle
 import sys
 from mpi4py import MPI
 
-# Scale radius
-rs = 20.
 # Local DM density
 rho0 = 0.42 # GeV/cm3
 
@@ -20,13 +18,13 @@ gamma_true   = float(sys.argv[4])
 
 # --------- MCMC fitting -> change to another file -----------------------
 def lnprior(p):
-    f, gamma = p
-    if ( 0. < gamma < 2. and 0. < f < 1.):
+    f, gamma, rs = p
+    if ( 0. < gamma < 2. and 0. < f < 1. and 0.01 < rs < 50.):
         return 0.
     return -np.inf
 
 def residual(p, robs, Tobs, rel_unc_Tobs, heat_int, mass):
-    f, gamma = p
+    f, gamma, rs = p
     Tmodel = temperature_withDM(robs, heat_int, f=f, M=mass*M_sun.value, 
                                 parameters=[gamma, rs, rho0])
     return -0.5*np.sum(((Tmodel-Tobs)/(rel_unc_Tobs*Tobs))**2.)
@@ -84,10 +82,10 @@ for i in range(len(r_obs)):
 
 print("Relative uncertainty in Tobs is ", rel_unc_Tobs)
 
-ndim     = 2
+ndim     = 3
 nwalkers = 50
 # first guess
-p0 = [[0.9, 0.9] + 1e-4*np.random.randn(ndim) for j in range(nwalkers)]
+p0 = [[0.9, 0.9, 20.] + 1e-4*np.random.randn(ndim) for j in range(nwalkers)]
 sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
                                 args=(r_obs, Tobs, rel_unc_Tobs, heat_int, mass))
 pos, prob, state  = sampler.run_mcmc(p0, 300, progress=True)
@@ -100,14 +98,14 @@ print ("ML estimator : " , maxlike)
 
 # Save likelihood
 file_object = open("./results/likelihood_" + 
-                   ("ex1_N%i_relunc%.2f_f%.1fgamma%.1f" %(nBDs, rel_unc_Tobs, f_true, gamma_true))
+                   ("ex2_N%i_relunc%.2f_f%.1fgamma%.1f" %(nBDs, rel_unc_Tobs, f_true, gamma_true))
                    + "v" + str(rank), "wb")
 pickle.dump(like, file_object, protocol=2)
 file_object.close()
 
 # Save posterior
 file_object = open("./results/posterior_" + 
-                   ("ex1_N%i_relunc%.2f_f%.1fgamma%.1f" %(nBDs, rel_unc_Tobs, f_true, gamma_true))
+                   ("ex2_N%i_relunc%.2f_f%.1fgamma%.1f" %(nBDs, rel_unc_Tobs, f_true, gamma_true))
                    + "v" + str(rank), "wb")
 pickle.dump(samples, file_object, protocol=2)
 file_object.close()
