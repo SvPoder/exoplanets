@@ -55,11 +55,11 @@ def statistics(filepath, nBDs, rel_unc, f, gamma, rank=100, D=2):
 
 
 if __name__ == '__main__':
-    filepath = "../results/bayesian/ex2/N100_relunc0.10/"
-    nBDs     = 100
+    filepath = "/Users/mariabenito/Desktop/results/ex2/N10000_relunc0.10/"
+    nBDs     = 10000
     rel_unc  = 0.10
     f        = [0.1, 0.3, 0.5, 0.7, 0.9]
-    gamma    = [0.2, 0.6, 1, 1.4, 1.8]
+    gamma    = [0.2, 0.6, 1., 1.4, 1.8]
     for _f in f:
         for _g in gamma:
             statistics(filepath, nBDs, rel_unc, _f, _g, D=3)
