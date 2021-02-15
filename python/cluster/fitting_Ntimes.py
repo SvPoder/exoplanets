@@ -13,8 +13,10 @@ rho0 = 0.42 # GeV/cm3
 
 nBDs         = int(sys.argv[1])
 rel_unc_Tobs = float(sys.argv[2])
-f_true       = float(sys.argv[3])
-gamma_true   = float(sys.argv[4])
+rel_mass     = float(sys.argv[3])
+f_true       = float(sys.argv[4])
+gamma_true   = float(sys.argv[5])
+rs_true      = 20.
 
 # --------- MCMC fitting -> change to another file -----------------------
 def lnprior(p):
@@ -70,10 +72,10 @@ else:
 Teff_interp_2d = comm.bcast(Teff_interp_2d, root=0)
 
 ## mock sample of BDs
-r_obs, Tobs, rel_unc_Tobs, Teff, mass, log_ages = mock_population(nBDs,
-                                                                  rel_unc_Tobs,
-                                                                  f_true, 
-                                                                  gamma_true)
+r_obs, Tobs, rel_unc_Tobs, mass, log_ages = mock_population(nBDs, rel_unc_Tobs,
+                                                            rel_mass,
+                                                            f_true, gamma_true, 
+                                                            rs_true=rs_true)
 
 ## calculate predictic intrinsic heat flow for mock BDs
 heat_int = np.zeros(len(r_obs))
@@ -98,15 +100,17 @@ print ("ML estimator : " , maxlike)
 
 # Save likelihood
 file_object = open("./results/likelihood_" + 
-                   ("ex2_N%i_relunc%.2f_f%.1fgamma%.1f" %(nBDs, rel_unc_Tobs, f_true, gamma_true))
-                   + "v" + str(rank), "wb")
+                   ("ex3_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1frs%.1f" 
+                    %(nBDs, rel_unc_Tobs, rel_mass, f_true, gamma_true, rs_true))
+                    + "v" + str(rank), "wb")
 pickle.dump(like, file_object, protocol=2)
 file_object.close()
 
 # Save posterior
 file_object = open("./results/posterior_" + 
-                   ("ex2_N%i_relunc%.2f_f%.1fgamma%.1f" %(nBDs, rel_unc_Tobs, f_true, gamma_true))
-                   + "v" + str(rank), "wb")
+                   ("ex3_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1frs%.1f" 
+                    %(nBDs, rel_unc_Tobs, rel_mass, f_true, gamma_true, rs_true))
+                    + "v" + str(rank), "wb")
 pickle.dump(samples, file_object, protocol=2)
 file_object.close()
 

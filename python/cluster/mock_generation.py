@@ -11,7 +11,7 @@ from astropy.constants import L_sun, R_jup, M_jup, M_sun
 from utils import temperature, heat, temperature_withDM, random_powerlaw
 
 
-def mock_population(N, rel_unc_Tobs, f_true, gamma_true,
+def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
                     rs_true=20, rho0_true=0.42):
     """
     Generate N observed exoplanets
@@ -24,7 +24,8 @@ def mock_population(N, rel_unc_Tobs, f_true, gamma_true,
     3) BD evolution model taken from fig 2 of Saumon & Marley'08
     4) BDs have masses chosen between 14-55 Mjup assuming power-law IMF and
        unifrom age distribution between 1-10 Gyr
-    5) Tobs has relative uncertainty rel_unc_Tobs - NOT YET!!
+    5) Tobs has relative uncertainty rel_unc_Tobs
+    6) Estimated masses have an uncertainty of rel_mass
     """
     #np.random.seed(42)
     # galactocentric radius of simulated exoplanets
@@ -33,6 +34,7 @@ def mock_population(N, rel_unc_Tobs, f_true, gamma_true,
     age = {}; logL = {}; L = {}; Teff = {}
     M   = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08]
     filepath = "./data/"
+    #filepath = "/Users/mariabenito/Dropbox/exoplanets/DM/python/cluster/data/"
     # TODO simplify by directly interpolating on heating/luminosity
     for mass in M:
         data = np.genfromtxt(filepath+"saumon_marley_fig2_"+str(mass) + ".dat",
@@ -55,6 +57,8 @@ def mock_population(N, rel_unc_Tobs, f_true, gamma_true,
     log_ages = np.random.uniform(9., 9.92, N) # [yr] / [1-10 Gyr]
     mass     = random_powerlaw(-0.6, N, Mmin=14, Mmax=55)
     mass     = mass*M_jup/M_sun # [Msun]
+    # Add uncertainty to mass
+    mass_obs = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=N)
     # Mapping (mass, age) -> Teff -> internal heat flow (no DM)
     heat_int = np.zeros(N)
     Teff     = np.zeros(N)
@@ -67,11 +71,11 @@ def mock_population(N, rel_unc_Tobs, f_true, gamma_true,
     Tobs = temperature_withDM(r_obs, heat_int, f=f_true, R=R_jup.value,
                            M=mass*M_sun.value,
                            parameters=[gamma_true, rs_true, rho0_true])
-    # add 10% relative uncertainty
+    # add uncertainty to temperature
     Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=N)
-    return r_obs, Tobs, rel_unc_Tobs, Teff, mass, log_ages
+    #return r_obs, Tobs, rel_unc_Tobs, Teff, mass, mass_obs, log_ages
+    return r_obs, Tobs, rel_unc_Tobs, mass_obs, log_ages
 
-#r_obs, Tobs, rel_unc_Tobs, Teff, mass, log_ages = mock_population(10000)
 
 """
 verbose=True
