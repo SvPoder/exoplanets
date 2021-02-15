@@ -4,17 +4,18 @@ import matplotlib.pyplot as plt
 from matplotlib.offsetbox import AnchoredText
 
 ## Plotting functions for exercise 1
-def FSE_f_gamma_ex1(filepath, nBDs, rel_unc, rank=100, D=2, PE="median"):
+def FSE_f_gamma_ex1(filepath, nBDs, rel_unc, rank=100, PE="median"):
     # grid points
-    f     = np.array([0.1, 0.3, 0.5, 0.7])#, 0.9])
+    f     = np.array([0.1, 0.3, 0.5, 0.7, 0.9])
     gamma = np.array([0.2, 0.6, 1, 1.4, 1.8])
     
     FSE_1 = []; FSE_2 = [] 
     for _f in f:
         for _g in gamma:
             true = [_f, _g]
-            data = np.genfromtxt(filepath +("N%i_relunc%.2f/statistics_ex1_N%i_relunc%.2f_f%.1fgamma%.1f" 
-                                            %(nBDs, rel_unc, nBDs, rel_unc, _f, _g)), unpack=True)
+            data=np.genfromtxt(filepath+("N%i_relunc%.2f/statistics_ex1_N%i_relunc%.2f_f%.1fgamma%.1f" 
+                                            %(nBDs, rel_unc, nBDs, rel_unc, _f, _g)), 
+                                            unpack=True)
             if PE=="median":
                 pe = np.array((data[2], data[3]))
             else:
@@ -30,7 +31,7 @@ def FSE_f_gamma_ex1(filepath, nBDs, rel_unc, rank=100, D=2, PE="median"):
     return xi, yi, zi_1, zi_2
 
 
-def plot_FSE_grid_f_gamma_ex1(filepath, fig, axes, rank=100, D=2, PE="median", 
+def plot_FSE_grid_f_gamma_ex1(filepath, fig, axes, rank=100, PE="median", 
                               plot_f=True):
     """
     Plot FSE in (f, gamma) plane for ex. 1 and 3 different numbers
@@ -52,7 +53,7 @@ def plot_FSE_grid_f_gamma_ex1(filepath, fig, axes, rank=100, D=2, PE="median",
     for i, ax in enumerate(axes.flat):
         
         xi, yi, zi_1, zi_2 = FSE_f_gamma_ex1(filepath, nBDs[i], rel_unc[i], 
-                                              rank=rank, D=D, PE=PE)
+                                              rank=rank, PE=PE)
         
         if plot_f==True:
             im = ax.pcolormesh(xi, yi, zi_1, norm=norm, cmap="magma_r")
@@ -106,5 +107,83 @@ def plot_1Dposterior_ex1(nBDs, rel_unc, f, gamma):
     
     fig.savefig("../Figs/1Dposterior_ex1_N%i_relunc%.2f_f%.1fgamma%.1f.pdf" 
                 %(nBDs, rel_unc, f, gamma))
+    # return
+    return
+
+## Plotting functions for exercise 2
+def FSE_f_gamma_rs_ex2(filepath, nBDs, rel_unc, rank=100, PE="median"):
+    # grid points
+    f     = np.array([0.1, 0.3, 0.5, 0.7, 0.9])
+    gamma = np.array([0.2, 0.6, 1, 1.4, 1.8])
+    rs    = 20.
+    
+    FSE_1 = []; FSE_2 = []; FSE_3 = []
+    for _f in f:
+        for _g in gamma:
+            true = [_f, _g, rs]
+            data = np.genfromtxt(filepath +("N%i_relunc%.2f/statistics_ex2_N%i_relunc%.2f_f%.1fgamma%.1f" 
+                                            %(nBDs, rel_unc, nBDs, rel_unc, _f, _g)), unpack=True)
+            if PE=="median":
+                pe = np.array((data[3], data[4], data[5]))
+            else:
+                sys.exit("Need to implement other point estimates")
+
+            FSE_1.append(np.sqrt(1/rank*np.sum(np.power(pe[0] - true[0], 2)))/true[0])
+            FSE_2.append(np.sqrt(1/rank*np.sum(np.power(pe[1] - true[1], 2)))/true[1])
+            FSE_3.append(np.sqrt(1/rank*np.sum(np.power(pe[2] - true[2], 2)))/true[2])
+
+    xi, yi = np.mgrid[0:1:(len(f)+1)*1j, 0:2:(len(gamma)+1)*1j]
+    zi_1   = np.array(FSE_1).reshape(len(f), len(gamma))
+    zi_2   = np.array(FSE_2).reshape(len(f), len(gamma))
+    zi_3   = np.array(FSE_3).reshape(len(f), len(gamma))
+    # return
+    return xi, yi, zi_1, zi_2, zi_3
+
+
+def plot_FSE_grid_f_gamma_ex2(filepath, fig, axes, rank=100, PE="median", 
+                              plot_f=True, plot_g=True):
+    """
+    Plot FSE in (f, gamma) plane for exercise 2 and 3 different numbers
+    of BDs in simulation (100, 1000, 10000) and 2 different levels of 
+    uncertainty in Tobs (0.05, 0.10)
+    """
+    norm = colors.BoundaryNorm(boundaries=np.arange(0, 1, 0.05), ncolors=256)
+    
+    _nBDs = [100, 1000, 10000]
+    _rel_unc = [0.05, 0.1]
+    nBDs    = []
+    rel_unc = []
+
+    for rel in _rel_unc:
+        for n in _nBDs:
+            nBDs.append(n)
+            rel_unc.append(rel)
+        
+    for i, ax in enumerate(axes.flat):
+        
+        xi, yi, zi_1, zi_2, zi_3 = FSE_f_gamma_rs_ex2(filepath, nBDs[i], rel_unc[i], 
+                                                      rank=rank, PE=PE)
+        
+        if plot_f==True:
+            im = ax.pcolormesh(xi, yi, zi_1, norm=norm, cmap="magma_r")
+        elif plot_g==True:
+            im = ax.pcolormesh(xi, yi, zi_2, norm=norm, cmap="viridis_r")
+        else:
+            im = ax.pcolormesh(xi, yi, zi_3, norm=norm, cmap="cividis_r")
+        
+        if i==0 or i==3:
+            ax.set_ylabel(r"$\gamma$")
+
+        ax.set_xlabel(r"$f$")
+        
+        text_box = AnchoredText(("N=%i, unc T=%i" %(nBDs[i], int(rel_unc[i]*100))) + "$\%$", 
+                                frameon=True, loc=2, pad=0.2)
+        plt.setp(text_box.patch, facecolor="white")
+        ax.add_artist(text_box)
+
+    fig.subplots_adjust(right=0.87)
+    cbar_ax = fig.add_axes([0.91, 0.25, 0.02, 0.4])
+    cbar = fig.colorbar(im, cax=cbar_ax)
+    cbar.ax.set_title("FSE", size=18.)
     # return
     return
