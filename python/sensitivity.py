@@ -31,20 +31,15 @@ def sensitivity(Tobs, Teff, alpha=0.05):
     bins = np.insert(bins, 0, 0)
 
     p_interp   = interp1d(bins, p)
-    y_h        = np.linspace(0.1, 1, 10) # total number of bins = 10
+    y_h        = np.linspace(0.1, 0.9, 9) # total number of bins = 10
     bins_equal = []
     bins_equal.append(x0)
     for y in y_h:
         root = brentq(interp_find_x, x0, bins[-2], args=(y, p_interp))
         x0 = root
         bins_equal.append(root)
-    try:
-        # n_th = 0.10*nBDs (or similar)
-        n_th, _ = np.histogram(Teff, bins=bins_equal) # theoretical counts
-    except ValueError:
-        print(bins_equal)
-        sys.exit(-1)
-    #print(n_th)
+    bins_equal.append(bins[-2])
+
     n, _    = np.histogram(Tobs, bins=bins_equal)
 
     _chi2   = np.sum(np.power(n-n_th, 2)/n_th) # observed counts
@@ -86,7 +81,7 @@ def sensitivity_nBDs_relunc(filepath, nBDs, rel_unc, rank=100):
 if __name__ == '__main__':
     
     filepath = "/Users/mariabenito/Desktop/results/ex1/"
-    nBDs    = [100, 1000, 10000]
+    nBDs    = [10000]
     rel_unc = [0.05, 0.10]
 
     for n in nBDs:
