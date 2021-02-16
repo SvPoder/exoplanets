@@ -57,15 +57,9 @@ def sensitivity(Tobs, Teff, alpha=0.05):
         # return
         return 0
 
-
-if __name__ == '__main__':
-
-    nBDs = 100
-    rel_unc = 0.05
-    f     = [0.1, 0.3, 0.5, 0.7] # , 0.9]
+def sensitivity_nBDs_relunc(filepath, nBDs, rel_unc, rank=100):
+    f     = [0.1, 0.3, 0.5, 0.7, 0.9]
     gamma = [0.2, 0.6, 1, 1.4, 1.8]
-    rank  = 100
-
     _sens = np.ones((len(f), len(gamma)))*1000
     j = 0
     for _f in f:
@@ -83,6 +77,19 @@ if __name__ == '__main__':
             k+=1
         j+=1
     # save acceptance ratio out of rank
-    filepath = "/Users/mariabenito/Desktop/results/ex1/"
     np.savetxt(filepath + ("N%i_relunc%.2f/sensitivity_ex1_N%i_relunc%.2f" 
                            %(nBDs, rel_unc, nBDs, rel_unc)), _sens)
+    # return
+    return
+
+
+if __name__ == '__main__':
+    
+    filepath = "/Users/mariabenito/Desktop/results/ex1/"
+    nBDs    = [100, 1000, 10000]
+    rel_unc = [0.05, 0.10]
+
+    for n in nBDs:
+        for rel in rel_unc:
+            sensitivity_nBDs_relunc(filepath, n, rel)
+    
