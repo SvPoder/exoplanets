@@ -5,11 +5,67 @@
 #
 # ===========================================================================
 import numpy as np
-from scipy.stats import loguniform
 from scipy.interpolate import interp1d, interp2d
 from astropy.constants import L_sun, R_jup, M_jup, M_sun
 from utils import temperature, heat, temperature_withDM, random_powerlaw
 
+def rho_bulge(r, phi, theta, R0=8.178, x0=0.899, y0=0.386, z0=0.250, 
+              alpha=0.415):
+    """
+    Density profile for Stanek + '97 (E2) bulge [arbitrary units]
+    (all spatial coordiantes are given in kpc)
+    """
+    x0 = x0*R0/8. # rescale to adopted R0 value
+    y0 = y0*R0/8. 
+    # return
+    return (np.exp(-np.sqrt(np.sin(theta)**2*((np.cos(phi+alpha)/x0)**2 +
+                            (np.sin(phi+alpha)/y0)**2) + 
+                            (np.cos(theta)/z0)**2)*r))
+
+def rho_disc(r, theta, R0=8.178, Rd=2.15, zh=0.40):
+    """
+    Density profile for Bovy and Rix disc [arbitrary units]
+    (all spatial coordiantes are given in kpc)
+    """
+    Rd = Rd*R0/8. # rescale to adopted R0 value
+    # return
+    return np.exp(-r*np.sin(theta)/Rd)*np.exp(-r*np.cos(theta)/zh)
+
+
+def rho(r, phi, theta, R0=8.178):
+    """
+    Density profile [arbitrary units]
+    """
+    # continuity condition at r = 1 kpc
+    C    = rho_disc(1., theta, R0)/rho_bulge(1., phi, theta, R0)
+    _rho = C*rho_bulge(r, phi, theta, R0)
+    # return
+    return (np.heaviside(1.-r, 1.)*_rho + 
+            np.heaviside(r-1., 0.)*rho_disc(r, theta, R0))
+
+def spatial_sampling(nBDs, phi=0., theta=np.pi/2., R0=8.178):
+    """
+    Sampling nBDs points from density profile rho using Von Neumann 
+    acceptance-rejection technique
+    """
+    ymin = 0.1; ymax = R0
+    umin = np.min([rho(ymin, phi, theta), rho(1., phi, theta), 
+                   rho(R0, phi, theta)])
+    umax = np.max([rho(ymin, phi, theta), rho(1., phi, theta), 
+                   rho(R0, phi, theta)])
+    
+    i = 0
+    r = np.ones(nBDs)*100
+    while i<nBDs:
+        yi = np.random.uniform(ymin, ymax)
+        ui = np.random.uniform(umin, umax)
+        if ui < rho(yi, phi, theta, R0):
+            r[i] = yi
+            i+=1
+        else:
+            continue
+    # return 
+    return r
 
 def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
                     rs_true=20, rho0_true=0.42):
@@ -29,11 +85,11 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     """
     #np.random.seed(42)
     # galactocentric radius of simulated exoplanets
-    r_obs = loguniform.rvs(0.1, 8.178, size=N)
+    r_obs = spatial_sampling(N)
     # load theoretical BD cooling model taken from Saumon & Marley '08 (fig 2)
     age = {}; logL = {}; L = {}; Teff = {}
     M   = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08]
-    filepath = "../python/cluster/data/"
+    filepath = "./data/"
     #filepath = "/Users/mariabenito/Dropbox/exoplanets/DM/python/cluster/data/"
     # TODO simplify by directly interpolating on heating/luminosity
     for mass in M:
