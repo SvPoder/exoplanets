@@ -73,7 +73,7 @@ def sensitivity_nBDs_relunc(filepath, nBDs, rel_unc, rank=100):
             k+=1
         j+=1
     # save acceptance ratio out of rank
-    np.savetxt(filepath + ("N%i_relunc%.2f/sensitivity_ex1_N%i_relunc%.2f" 
+    np.savetxt(filepath + ("N%i_relunc%.2f/sensitivity_ex2_N%i_relunc%.2f" 
                            %(nBDs, rel_unc, nBDs, rel_unc)), _sens)
     # return
     return
@@ -81,8 +81,8 @@ def sensitivity_nBDs_relunc(filepath, nBDs, rel_unc, rank=100):
 
 if __name__ == '__main__':
     
-    filepath = "/Users/mariabenito/Desktop/results/ex1/"
-    nBDs    = [10000]
+    filepath = "/Users/mariabenito/Desktop/results/ex2/"
+    nBDs    = [100, 1000, 10000]
     rel_unc = [0.05, 0.10]
 
     for n in nBDs:
