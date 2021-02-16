@@ -40,6 +40,7 @@ def sensitivity(Tobs, Teff, alpha=0.05):
         bins_equal.append(root)
     bins_equal.append(bins[-2])
 
+    n_th, _ = np.histogram(Teff, bins=bins_equal) # theoretical counts
     n, _    = np.histogram(Tobs, bins=bins_equal)
 
     _chi2   = np.sum(np.power(n-n_th, 2)/n_th) # observed counts
