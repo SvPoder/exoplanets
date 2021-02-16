@@ -3,7 +3,7 @@ from scipy.stats import chisquare
 from scipy.stats import chi2
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
-from scipy.optimize import newton
+from scipy.optimize import brentq
 from mock_generation import mock_population
 
 
@@ -31,20 +31,11 @@ def sensitivity(Tobs, Teff, alpha=0.05):
     bins = np.insert(bins, 0, 0)
 
     p_interp   = interp1d(bins, p)
-    y_h        = np.linspace(0, 1, 11) # total number of bins = 10
+    y_h        = np.linspace(0.1, 1, 10) # total number of bins = 10
     bins_equal = []
+    bins_equal.append(x0)
     for y in y_h:
-        try: 
-            #print(y, newton(interp_find_x, x0, args=(y, )))
-            root = newton(interp_find_x, x0, args=(y, p_interp,))
-        except:
-            if y == y_h[-1]:
-                #print(y)
-                root = bins[-2]
-            else:
-                x0 = x0 + 50
-                #print("except", y, newton(interp_find_x, x0, args=(y, )))
-                root = newton(interp_find_x, x0, args=(y, p_interp, ))
+        root = brentq(interp_find_x, x0, bins[-2], args=(y, p_interp))
         x0 = root
         bins_equal.append(root)
     try:
@@ -71,11 +62,14 @@ if __name__ == '__main__':
 
     nBDs = 100
     rel_unc = 0.05
-    f     = [0.1, 0.3, 0.5, 0.7, 0.9]
+    f     = [0.1, 0.3, 0.5, 0.7] # , 0.9]
     gamma = [0.2, 0.6, 1, 1.4, 1.8]
     rank  = 100
 
+    _sens = np.ones((len(f), len(gamma)))*1000
+    j = 0
     for _f in f:
+        k = 0
         for _g in gamma:
             print("====== nBDS=%i, rel_unc=%.2f, f=%.1f, gamma=%.1f" 
                     %(nBDs, rel_unc, _f, _g))
@@ -85,3 +79,10 @@ if __name__ == '__main__':
                 _bool[i] = sensitivity(Tobs, Teff)
             print("Accepted H0 : %i" %int(np.sum(_bool)))
             print("Rejected H0 : %i" %(len(_bool)-int(np.sum(_bool))))
+            _sens[j, k] = int(np.sum(_bool))
+            k+=1
+        j+=1
+    # save acceptance ratio out of rank
+    filepath = "/Users/mariabenito/Desktop/results/ex1/"
+    np.savetxt(filepath + ("N%i_relunc%.2f/sensitivity_ex1_N%i_relunc%.2f" 
+                           %(nBDs, rel_unc, nBDs, rel_unc)), _sens)
