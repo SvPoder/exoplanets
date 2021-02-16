@@ -72,7 +72,7 @@ else:
 Teff_interp_2d = comm.bcast(Teff_interp_2d, root=0)
 
 ## mock sample of BDs
-r_obs, Tobs, rel_unc_Tobs, mass, log_ages = mock_population(nBDs, rel_unc_Tobs,
+r_obs, Tobs, rel_unc_Tobs, _, mass, log_ages = mock_population(nBDs, rel_unc_Tobs,
                                                             rel_mass,
                                                             f_true, gamma_true, 
                                                             rs_true=rs_true)

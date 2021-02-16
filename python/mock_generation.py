@@ -74,7 +74,7 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     # add uncertainty to temperature
     Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=N)
     #return r_obs, Tobs, rel_unc_Tobs, Teff, mass, mass_obs, log_ages
-    return r_obs, Tobs, rel_unc_Tobs, mass_obs, log_ages
+    return r_obs, Tobs, rel_unc_Tobs, Teff, mass_obs, log_ages
 
 
 """

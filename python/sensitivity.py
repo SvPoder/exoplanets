@@ -81,7 +81,7 @@ if __name__ == '__main__':
                     %(nBDs, rel_unc, _f, _g))
             _bool = np.ones(rank)*100
             for i in range(rank):
-                _, Tobs, _, Teff, _, _ = mock_population(nBDs, rel_unc, _f, _g)
+                _, Tobs, _, Teff, _, _ = mock_population(nBDs, rel_unc, 0., _f, _g)
                 _bool[i] = sensitivity(Tobs, Teff)
             print("Accepted H0 : %i" %int(np.sum(_bool)))
             print("Rejected H0 : %i" %(len(_bool)-int(np.sum(_bool))))
