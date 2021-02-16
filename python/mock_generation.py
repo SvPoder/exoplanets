@@ -86,6 +86,7 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     #np.random.seed(42)
     # galactocentric radius of simulated exoplanets
     r_obs = spatial_sampling(N)
+    
     # load theoretical BD cooling model taken from Saumon & Marley '08 (fig 2)
     age = {}; logL = {}; L = {}; Teff = {}
     M   = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08]
@@ -109,6 +110,7 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
             _teff.append(Teff_interp(lage))
     # effective temperature (wo DM heating) vs log(age) and mass exoplanet
     Teff_interp_2d = interp2d(_log_age, _mass, _teff)
+
     # Ages and masses of simulated BDs
     log_ages = np.random.uniform(9., 9.92, N) # [yr] / [1-10 Gyr]
     mass     = random_powerlaw(-0.6, N, Mmin=14, Mmax=55)
@@ -123,6 +125,7 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
         heat_int[i] = heat(Teff_interp_2d(log_ages[i], mass[i]), R_jup.value)
         #if i < 10:
         #    print(log_ages[i], mass[i], heat_int[i])
+    
     # Observed velocity (internal heating + DM)
     Tobs = temperature_withDM(r_obs, heat_int, f=f_true, R=R_jup.value,
                            M=mass*M_sun.value,
