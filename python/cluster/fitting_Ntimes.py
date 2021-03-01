@@ -7,7 +7,7 @@ from astropy.constants import R_jup, M_sun
 import glob
 import sys
 import pickle
-#from mpi4py import MPI
+from mpi4py import MPI
 
 # Local DM density
 rho0 = 0.42 # GeV/cm3
@@ -42,9 +42,8 @@ def lnprob(p, robs, Tobs, rel_unc_Tobs, heat_int, mass):
     return lp + residual(p, robs, Tobs, rel_unc_Tobs, heat_int, mass)
 # ------------------------------------------------------------------------
 
-#comm = MPI.COMM_WORLD
-#rank = comm.Get_rank()
-rank=1
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
 
 # ------------------ SIMULATION ------------------------------------------
 ## mock sample of BDs
