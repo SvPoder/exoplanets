@@ -98,7 +98,7 @@ print ("ML estimator : " , maxlike)
 # Save likelihood
 file_object = open("./results/likelihood_" + 
                    ("ex3_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1frs%.1f" 
-                    %(nBDs, rel_unc_Tobs, rel_mass, f_true, gamma_true, rs_true))
+                    %(nBDs, rel_unc_T, rel_mass, f_true, gamma_true, rs_true))
                     + "v" + str(rank), "wb")
 pickle.dump(like, file_object, protocol=2)
 file_object.close()
@@ -106,7 +106,7 @@ file_object.close()
 # Save posterior
 file_object = open("./results/posterior_" + 
                    ("ex3_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1frs%.1f" 
-                    %(nBDs, rel_unc_Tobs, rel_mass, f_true, gamma_true, rs_true))
+                    %(nBDs, rel_unc_T, rel_mass, f_true, gamma_true, rs_true))
                     + "v" + str(rank), "wb")
 pickle.dump(samples, file_object, protocol=2)
 file_object.close()
