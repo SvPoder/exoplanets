@@ -2,11 +2,12 @@ import numpy as np
 from scipy.stats import chisquare
 from scipy.stats import chi2
 import matplotlib.pyplot as plt
-from scipy.interpolate import interp1d, interp2d
+from scipy.interpolate import interp1d
 from scipy.optimize import brentq
-from mock_generation_old import mock_population
+from mock_generation import mock_population_sens
 from astropy.constants import L_sun, R_jup
 from utils import temperature
+import glob
 
 def interp_find_x(x, y, p_interp):
     try:
@@ -54,8 +55,8 @@ def sensitivity(Tobs, Teff, alpha=0.05):
         # return
         return 0
 
-def sensitivity_nBDs_relunc(filepath, nBDs, rel_unc, relM, Teff_inter, rank=100):
-    
+def sensitivity_nBDs_relunc(filepath, nBDs, rel_unc, relM, points, values, 
+                            rank=100):
     f     = [0.1, 0.3, 0.5, 0.7, 0.9]
     gamma = [0.2, 0.6, 1, 1.4, 1.8]
     _sens = np.ones((len(f), len(gamma)))*1000
@@ -67,8 +68,8 @@ def sensitivity_nBDs_relunc(filepath, nBDs, rel_unc, relM, Teff_inter, rank=100)
                     %(nBDs, rel_unc, relM, _f, _g))
             _bool = np.ones(rank)*100
             for i in range(rank):
-                Tobs, Teff = mock_population(nBDs, rel_unc, relM, _f, _g, 
-                                             Teff_inter)
+                Tobs, Teff = mock_population_sens(nBDs, rel_unc, relM, points, 
+                                                  values, _f, _g, rs_true=20.)
                 _bool[i] = sensitivity(Tobs, Teff)
             print("Accepted H0 : %i" %int(np.sum(_bool)))
             print("Rejected H0 : %i" %(len(_bool)-int(np.sum(_bool))))
@@ -84,38 +85,41 @@ def sensitivity_nBDs_relunc(filepath, nBDs, rel_unc, relM, Teff_inter, rank=100)
 
 if __name__ == '__main__':
     
-    nBDs    = [100, 10000]
+    nBDs    = [100, 1000, 10000, 100000]
     rel_unc = [0.05, 0.10]
-    relM    = [0.10, 0.20]
+    relM    = [0., 0.10, 0.20]
     # ------------------------------------------------------------------------
-    # load theoretical BD cooling model taken from Saumon & Marley '08 (fig 2)
-    age = {}; logL = {}; L = {}; Teff = {}
-    M   = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08]
-    filepath = "./cluster/data/"
-    #filepath = "/Users/mariabenito/Dropbox/exoplanets/DM/python/cluster/data/"
-    # TODO simplify by directly interpolating on heating/luminosity
-    for mass in M:
-        data = np.genfromtxt(filepath+"saumon_marley_fig2_"+str(mass) + ".dat",
-                             unpack=True)
-        age[mass]  = data[0]
-        heat_int   = np.power(10, data[1])*L_sun.value
-        Teff[mass] = temperature(heat_int, R_jup)
-    log_age  = np.linspace(6.1, 9.92, 10)
-    _log_age = []; _mass = []; _teff = []
+    # load theoretical BD cooling model - ATMO 2020
+    path  =  "../data/evolution_models/ATMO_2020_models/evolutionary_tracks/"
+    model = "ATMO_CEQ/"
+    path  = path + model
+    M     = []
+    age   = {}
+    Teff  = {}
+    files = glob.glob(path + "*.txt")
+    for file in files:
+        data = np.genfromtxt(file, unpack=True)
+        age[data[0][0]]  = data[1] # age [Gyr]
+        Teff[data[0][0]] = data[2] # Teff [K]
+        M.append(data[0][0])
 
+    _age   = np.linspace(1, 10, 100)
+    _age_i = []; _mass = []; _teff = []
+    # the first 5 masses do not have all values between 1 and 10 Gyr
+    M = np.sort(M)[5:-10] # further remove larger masses
     for m in M:
         Teff_interp = interp1d(age[m], Teff[m])
-        for lage in log_age:
-            _log_age.append(lage)
+        for _a in _age:
+            _age_i.append(_a)
             _mass.append(m)
-            _teff.append(Teff_interp(lage))
-    # effective temperature (wo DM heating) vs log(age) and mass exoplanet
-    Teff_interp_2d = interp2d(_log_age, _mass, _teff)
+            _teff.append(Teff_interp(_a))
+    points = np.transpose(np.asarray([_age_i, _mass]))
+    values = np.asarray(_teff)
     # ------------------------------------------------------------------------
-    filepath = "/Users/mariabenito/Desktop/results/ex3/"
+    filepath = "/Users/mariabenito/Desktop/results/"
     for n in nBDs:
         for rel in rel_unc:
             for rM in relM:
                 print(n, rel, rM)
-                sensitivity_nBDs_relunc(filepath, n, rel, rM, Teff_interp_2d)
+                sensitivity_nBDs_relunc(filepath, n, rel, rM, points, values)
     

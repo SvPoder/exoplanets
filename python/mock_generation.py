@@ -82,10 +82,9 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
 
     Assumptions
     -----------
-    1) N observed exoplanets distributed w/ log uniform probability within
-       0.1 and 8.178
+    1) N observed exoplanets distributed according to E2 bulge + BR disc
     2) (All) exoplanets radius = Rjup
-    3) BD evolution model taken from fig 2 of Saumon & Marley'08
+    3) BD evolution model taken from ATMO 2020
     4) BDs have masses chosen between 14-55 Mjup assuming power-law IMF and
        unifrom age distribution between 1-10 Gyr
     5) Tobs has relative uncertainty rel_unc_Tobs
@@ -97,8 +96,9 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     
     # load theoretical BD cooling model - ATMO 2020
     if points is None:
-        path = "./data/"
-        path = "../data/evolution_models/ATMO_2020_models/evolutionary_tracks/ATMO_CEQ/"
+        path =  "../data/evolution_models/ATMO_2020_models/evolutionary_tracks/"
+        model = "ATMO_CEQ/"
+        path  = path + model
         M     = []
         age   = {}
         Teff  = {}
@@ -141,3 +141,49 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     #return
     return r_obs, Tobs, mass, ages
 
+
+def mock_population_sens(N, rel_unc_Tobs, rel_mass, 
+                         points, values,
+                         f_true, gamma_true,
+                         rs_true=20, rho0_true=0.42):
+    """
+    Generate N observed exoplanets - intended to be run with sensitivity
+    analysis
+
+    Assumptions
+    -----------
+    1) N observed exoplanets distributed according to E2 bulge + BR disc
+    2) (All) exoplanets radius = Rjup
+    3) BD evolution model taken from ATMO 2020
+    4) BDs have masses chosen between 14-55 Mjup assuming power-law IMF and
+       unifrom age distribution between 1-10 Gyr
+    5) Tobs has relative uncertainty rel_unc_Tobs
+    6) Estimated masses have an uncertainty of rel_mass
+    """
+    #np.random.seed(42)
+    # galactocentric radius of simulated exoplanets
+    r_obs = spatial_sampling(N)
+
+    # Ages and masses of simulated BDs
+    ages = np.random.uniform(1., 10., N) # [yr] / [1-10 Gyr]
+    mass = IMF_sampling(-0.6, N, Mmin=14, Mmax=55) # [Mjup]
+    mass = mass*M_jup/M_sun # [Msun]
+    xi = np.transpose(np.asarray([ages, mass]))
+
+    Teff     = griddata(points, values, xi) # true Teff [K]
+    heat_int = heat(Teff, np.ones(len(Teff))*R_jup.value)
+    
+    # Observed velocity (internal heating + DM)
+    Tobs = temperature_withDM(r_obs, heat_int, f=f_true, R=R_jup.value,
+                           M=mass*M_sun.value,
+                           parameters=[gamma_true, rs_true, rho0_true])
+    # add noise
+    Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=N)
+    mass = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=N)
+    
+    # estimated Teff [K]
+    xi = np.transpose(np.asarray([ages, mass]))
+    Teff = griddata(points, values, xi)
+
+    #return
+    return Tobs, Teff
