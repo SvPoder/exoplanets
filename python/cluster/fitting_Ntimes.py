@@ -1,22 +1,23 @@
 import emcee
 import numpy as np
-from scipy.interpolate import interp1d, interp2d
-from utils import temperature, heat, temperature_withDM
+from scipy.interpolate import interp1d, griddata
+from utils import heat, temperature_withDM
 from mock_generation import mock_population
-from astropy.constants import R_jup, M_jup, M_sun, L_sun
-import pickle
+from astropy.constants import R_jup, M_sun
+import glob
 import sys
-from mpi4py import MPI
+import pickle
+#from mpi4py import MPI
 
 # Local DM density
 rho0 = 0.42 # GeV/cm3
 
-nBDs         = int(sys.argv[1])
-rel_unc_Tobs = float(sys.argv[2])
-rel_mass     = float(sys.argv[3])
-f_true       = float(sys.argv[4])
-gamma_true   = float(sys.argv[5])
-rs_true      = 20.
+nBDs       = int(sys.argv[1])
+rel_unc_T  = float(sys.argv[2])
+rel_mass   = float(sys.argv[3])
+f_true     = float(sys.argv[4])
+gamma_true = float(sys.argv[5])
+rs_true    = 20.
 
 # --------- MCMC fitting -> change to another file -----------------------
 def lnprior(p):
@@ -41,55 +42,51 @@ def lnprob(p, robs, Tobs, rel_unc_Tobs, heat_int, mass):
     return lp + residual(p, robs, Tobs, rel_unc_Tobs, heat_int, mass)
 # ------------------------------------------------------------------------
 
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
+#comm = MPI.COMM_WORLD
+#rank = comm.Get_rank()
+rank=1
 
-if rank==0:
-    ## load theoretical BD cooling model taken from Saumon & Marley '08 (fig 2)
-    age  = {}; logL = {}; L = {}; Teff = {}
-    M    = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08]
-    # TODO simplify by directly interpolating heating/luminosity
-    for m in M:
-        data = np.genfromtxt("./data/saumon_marley_fig2_" + str(m) + ".dat", 
-                         unpack=True)
-        age[m]  = data[0]
-        heat_int   = np.power(10, data[1])*L_sun.value
-        Teff[m] = temperature(heat_int, R_jup)
-    log_age  = np.linspace(6.1, 9.92, 10)
-    _log_age = []
-    _mass    = []
-    _teff    = []
-    for m in M:
-        Teff_interp = interp1d(age[m], Teff[m])
-        for lage in log_age:
-            _log_age.append(lage)
-            _mass.append(m)
-            _teff.append(Teff_interp(lage))
-    # effective temperature (wo DM heating) vs log(age) and mass exoplanet
-    Teff_interp_2d = interp2d(_log_age, _mass, _teff)
-else:
-    Teff_interp_2d=None
-Teff_interp_2d = comm.bcast(Teff_interp_2d, root=0)
-
+# ------------------ SIMULATION ------------------------------------------
 ## mock sample of BDs
-r_obs, Tobs, rel_unc_Tobs, mass, log_ages = mock_population(nBDs, rel_unc_Tobs,
-                                                            rel_mass,
-                                                            f_true, gamma_true, 
-                                                            rs_true=rs_true)
-
+r_obs, Tobs, mass, ages = mock_population(nBDs, rel_unc_T, rel_mass,
+                                          f_true, gamma_true, 
+                                          rs_true=rs_true, rho0_true=rho0)
+# ------------------ RECONSTRUCTION --------------------------------------
 ## calculate predictic intrinsic heat flow for mock BDs
-heat_int = np.zeros(len(r_obs))
-for i in range(len(r_obs)):
-    heat_int[i] = heat(Teff_interp_2d(log_ages[i], mass[i]), R_jup.value)
+#heat_int = heat(Teff, np.ones(len(Teff))*R_jup.value)
+path = "./data/"
+M     = []
+age   = {}
+Teff  = {}
+files = glob.glob(path + "*.txt")
+for file in files:
+    data = np.genfromtxt(file, unpack=True)
+    age[data[0][0]]  = data[1] # age [Gyr]
+    Teff[data[0][0]] = data[2] # Teff [K]
+    M.append(data[0][0])
 
-print("Relative uncertainty in Tobs is ", rel_unc_Tobs)
+_age   = np.linspace(1, 10, 100)
+_age_i = []; _mass = []; _teff = []
+# the first 5 masses do not have all values between 1 and 10 Gyr
+M = np.sort(M)[5:-10] # further remove larger masses
+for m in M:
+    Teff_interp = interp1d(age[m], Teff[m])
+    for _a in _age:
+        _age_i.append(_a)
+        _mass.append(m)
+        _teff.append(Teff_interp(_a))
+points = np.transpose(np.asarray([_age_i, _mass]))
+values = np.asarray(_teff)
+xi = np.transpose(np.asarray([ages, mass]))
+Teff     = griddata(points, values, xi)
+heat_int = heat(Teff, np.ones(len(Teff))*R_jup.value)
 
 ndim     = 3
 nwalkers = 50
 # first guess
 p0 = [[0.9, 0.9, 20.] + 1e-4*np.random.randn(ndim) for j in range(nwalkers)]
 sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
-                                args=(r_obs, Tobs, rel_unc_Tobs, heat_int, mass))
+                                args=(r_obs, Tobs, rel_unc_T, heat_int, mass))
 pos, prob, state  = sampler.run_mcmc(p0, 300, progress=False)
 sampler.reset()
 pos, prob, state  = sampler.run_mcmc(pos, 5000, progress=False)
