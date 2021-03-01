@@ -1,7 +1,7 @@
 import numpy as np
 import pickle
 
-def statistics(filepath, nBDs, rel_unc, f, gamma, rank=100, D=2):
+def statistics(filepath, nBDs, rel_unc, relM, f, gamma, rs=20., rank=100, D=2):
     """
     Calculate mean, median, MAP & ML point estimates
 
@@ -18,14 +18,17 @@ def statistics(filepath, nBDs, rel_unc, f, gamma, rank=100, D=2):
     ML     = np.zeros((D, rank))
     
     for i in range(rank):
+        #print(i)
         # load posterior + likelihood
-        file_name = (filepath + ("posterior_ex2_N%i_relunc%.2f_f%.1fgamma%.1fv%i"
-                                 %(nBDs, rel_unc, f, gamma, i)))
+
+        file_name = (filepath + ("posterior_ex3_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1frs%.1fv%i" 
+                    %(nBDs, rel_unc, relM, f, gamma, rs, i)))
         samples   = pickle.load(open(file_name, "rb"))
 
-        file_name = (filepath + ("likelihood_ex2_N%i_relunc%.2f_f%.1fgamma%.1fv%i"
-                                 %(nBDs, rel_unc, f, gamma, i)))
+        file_name = (filepath + ("likelihood_ex3_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1frs%.1fv%i" 
+                    %(nBDs, rel_unc, relM, f, gamma, rs, i)))
         like      = pickle.load(open(file_name, "rb"))
+
         # calculate point estimates
         for j in range(D):
             mean[j][i]   = np.mean(samples[:, j])
@@ -35,8 +38,8 @@ def statistics(filepath, nBDs, rel_unc, f, gamma, rank=100, D=2):
             MAP[j][i]    = _bins[np.argmax(_n)]
             ML[j][i]     = samples[:, j][np.argmax(like)]
 
-    output = open(filepath + ("statistics_ex2_N%i_relunc%.2f_f%.1fgamma%.1f" 
-                              %(nBDs, rel_unc, f, gamma)), 
+    output = open(filepath + ("statistics_ex3_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1f" 
+                              %(nBDs, rel_unc, relM, f, gamma)), 
                   "w")
     for i in range(rank):
         for j in range(D):
@@ -55,12 +58,19 @@ def statistics(filepath, nBDs, rel_unc, f, gamma, rank=100, D=2):
 
 
 if __name__ == '__main__':
-    filepath = "/Users/mariabenito/Desktop/results/ex2/N10000_relunc0.10/"
-    nBDs     = 10000
-    rel_unc  = 0.10
-    f        = [0.1, 0.3, 0.5, 0.7, 0.9]
-    gamma    = [0.2, 0.6, 1., 1.4, 1.8]
-    for _f in f:
-        for _g in gamma:
-            statistics(filepath, nBDs, rel_unc, _f, _g, D=3)
+    filepath = "/Users/mariabenito/Desktop/results/ex3/N10000_relunc0.10/"
+    nBDs     = [10000]
+    rel_unc  = [0.10]
+    rel_M    = [0.20]
+    f        = [0.7]
+    gamma    = [1.0]
+
+    for N in nBDs:
+        for rel in rel_unc:
+            for relM in rel_M:
+                print(N, rel, relM)
+                for _f in f:
+                    for _g in gamma:
+                        print(_f, _g)
+                        statistics(filepath, N, rel, relM, _f, _g, 20., 100, 3)
 

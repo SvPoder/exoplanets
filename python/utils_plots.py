@@ -24,7 +24,7 @@ def display_values(XX, YY, H, ax=False):
     # return
     return
 
-def sensitivity_grid(filepath, nBDs, rel_unc, 
+def sensitivity_grid_ex1(filepath, nBDs, rel_unc, 
                      ax=False, show_bin_values=True):
     """
     Plot # of H0 acceptance out of rank in (f, gamma) plane
@@ -35,6 +35,33 @@ def sensitivity_grid(filepath, nBDs, rel_unc,
 
     zi = np.genfromtxt(filepath + ("N%i_relunc%.2f/sensitivity_ex1_N%i_relunc%.2f" 
                                             %(nBDs, rel_unc, nBDs, rel_unc)))   
+    xi, yi = np.mgrid[0:1:(len(f)+1)*1j, 0:2:(len(gamma)+1)*1j]
+    
+    if ax==False:
+        fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+        ax.set_ylabel(r"$\gamma$"); ax.set_xlabel(r"$f$")
+    
+    norm = colors.BoundaryNorm(boundaries=np.array([0, 5, 100]), ncolors=2)
+    cmap = colors.ListedColormap(["#3F5F5F", "#FFFF66"])
+    ax.pcolormesh(xi, yi, zi, norm=norm, cmap=cmap, edgecolor="black")
+    
+    if show_bin_values:
+        display_values(xi, yi, zi, ax=ax)
+    # return
+    return
+
+
+def sensitivity_grid(filepath, nBDs, rel_unc, relM,
+                     ax=False, show_bin_values=True):
+    """
+    Plot # of H0 acceptance out of rank in (f, gamma) plane
+    """
+    # grid points
+    f     = np.array([0.1, 0.3, 0.5, 0.7, 0.9])
+    gamma = np.array([0.2, 0.6, 1, 1.4, 1.8])
+
+    zi = np.genfromtxt(filepath + ("sensitivity_ex5_N%i_relunc%.2f_relM%.2f"
+                                    %(nBDs, rel_unc, relM)))
     xi, yi = np.mgrid[0:1:(len(f)+1)*1j, 0:2:(len(gamma)+1)*1j]
     
     if ax==False:

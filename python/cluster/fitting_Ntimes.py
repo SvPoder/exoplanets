@@ -72,7 +72,7 @@ else:
 Teff_interp_2d = comm.bcast(Teff_interp_2d, root=0)
 
 ## mock sample of BDs
-r_obs, Tobs, rel_unc_Tobs, _, mass, log_ages = mock_population(nBDs, rel_unc_Tobs,
+r_obs, Tobs, rel_unc_Tobs, mass, log_ages = mock_population(nBDs, rel_unc_Tobs,
                                                             rel_mass,
                                                             f_true, gamma_true, 
                                                             rs_true=rs_true)
@@ -90,9 +90,9 @@ nwalkers = 50
 p0 = [[0.9, 0.9, 20.] + 1e-4*np.random.randn(ndim) for j in range(nwalkers)]
 sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
                                 args=(r_obs, Tobs, rel_unc_Tobs, heat_int, mass))
-pos, prob, state  = sampler.run_mcmc(p0, 300, progress=True)
+pos, prob, state  = sampler.run_mcmc(p0, 300, progress=False)
 sampler.reset()
-pos, prob, state  = sampler.run_mcmc(pos, 5000, progress=True)
+pos, prob, state  = sampler.run_mcmc(pos, 5000, progress=False)
 like    = sampler.flatlnprobability # likelihood
 samples = sampler.flatchain # posterior
 maxlike = sampler.flatchain[np.argmax(sampler.flatlnprobability)]
