@@ -5,9 +5,10 @@
 #
 # ===========================================================================
 import numpy as np
-from scipy.interpolate import interp1d, interp2d
+from scipy.interpolate import interp1d, griddata
 from astropy.constants import L_sun, R_jup, M_jup, M_sun
-from utils import temperature, heat, temperature_withDM, random_powerlaw
+from utils import heat, temperature_withDM, random_powerlaw
+import glob
 
 def rho_bulge(r, phi, theta, R0=8.178, x0=0.899, y0=0.386, z0=0.250, 
               alpha=0.415):
@@ -68,7 +69,7 @@ def spatial_sampling(nBDs, phi=0., theta=np.pi/2., R0=8.178):
     return r
 
 def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
-                    rs_true=20, rho0_true=0.42):
+                    rs_true=20, rho0_true=0.42, points=None, values=None):
     """
     Generate N observed exoplanets
 
@@ -83,48 +84,53 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     5) Tobs has relative uncertainty rel_unc_Tobs
     6) Estimated masses have an uncertainty of rel_mass
     """
-    #np.random.seed(42)
+    np.random.seed(42)
     # galactocentric radius of simulated exoplanets
     r_obs = spatial_sampling(N)
     
-    # load theoretical BD cooling model taken from Saumon & Marley '08 (fig 2)
-    age = {}; logL = {}; L = {}; Teff = {}
-    M   = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08]
-    filepath = "./data/"
-    #filepath = "/Users/mariabenito/Dropbox/exoplanets/DM/python/cluster/data/"
-    # TODO simplify by directly interpolating on heating/luminosity
-    for mass in M:
-        data = np.genfromtxt(filepath+"saumon_marley_fig2_"+str(mass) + ".dat",
-                             unpack=True)
-        age[mass]  = data[0]
-        heat_int   = np.power(10, data[1])*L_sun.value
-        Teff[mass] = temperature(heat_int, R_jup)
-    log_age  = np.linspace(6.1, 9.92, 10)
-    _log_age = []; _mass = []; _teff = []
+    # load theoretical BD cooling model - ATMO 2020
+    if points is None:
+        path = "./data/"
+        path = "../data/evolution_models/ATMO_2020_models/evolutionary_tracks/ATMO_CEQ/"
+        M     = []
+        age   = {}
+        Teff  = {}
+        files = glob.glob(path + "*.txt")
+        for file in files:
+            data = np.genfromtxt(file, unpack=True)
+            age[data[0][0]]  = data[1] # age [Gyr]
+            Teff[data[0][0]] = data[2] # Teff [K]
+            M.append(data[0][0])
 
-    for m in M:
-        Teff_interp = interp1d(age[m], Teff[m])
-        for lage in log_age:
-            _log_age.append(lage)
-            _mass.append(m)
-            _teff.append(Teff_interp(lage))
-    # effective temperature (wo DM heating) vs log(age) and mass exoplanet
-    Teff_interp_2d = interp2d(_log_age, _mass, _teff)
+        _age   = np.linspace(1, 10, 100)
+        _age_i = []; _mass = []; _teff = []
+        # the first 5 masses do not have all values between 1 and 10 Gyr
+        M = np.sort(M)[5:-10] # further remove larger masses
+        for m in M:
+            Teff_interp = interp1d(age[m], Teff[m])
+            for _a in _age:
+                _age_i.append(_a)
+                _mass.append(m)
+                _teff.append(Teff_interp(_a))
+        points = np.transpose(np.asarray([_age_i, _mass]))
+        values = np.asarray(_teff)
 
     # Ages and masses of simulated BDs
-    log_ages = np.random.uniform(9., 9.92, N) # [yr] / [1-10 Gyr]
-    mass     = random_powerlaw(-0.6, N, Mmin=14, Mmax=55)
-    mass     = mass*M_jup/M_sun # [Msun]
+    ages = np.random.uniform(1., 10., N) # [yr] / [1-10 Gyr]
+    mass = random_powerlaw(-0.6, N, Mmin=14, Mmax=55) # [Mjup]
+    mass = mass*M_jup/M_sun # [Msun]
+    xi = np.transpose(np.asarray([ages, mass]))
+
+    Teff_interp_2d = griddata(points, values, xi)
+
     # Add uncertainty to mass
     mass_obs = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=N)
     # Mapping (mass, age) -> Teff -> internal heat flow (no DM)
     heat_int = np.zeros(N)
     Teff     = np.zeros(N)
     for i in range(N):
-        Teff[i]     = Teff_interp_2d(log_ages[i], mass[i])
-        heat_int[i] = heat(Teff_interp_2d(log_ages[i], mass[i]), R_jup.value)
-        #if i < 10:
-        #    print(log_ages[i], mass[i], heat_int[i])
+        Teff[i]     = Teff_interp_2d[i]
+        heat_int[i] = heat(Teff[i], R_jup.value)
     
     # Observed velocity (internal heating + DM)
     Tobs = temperature_withDM(r_obs, heat_int, f=f_true, R=R_jup.value,
@@ -132,8 +138,8 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
                            parameters=[gamma_true, rs_true, rho0_true])
     # add uncertainty to temperature
     Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=N)
-    #return r_obs, Tobs, rel_unc_Tobs, Teff, mass, mass_obs, log_ages
-    return r_obs, Tobs, rel_unc_Tobs, Teff, mass_obs, log_ages
+    #return
+    return r_obs, Tobs, rel_unc_Tobs, Teff, mass_obs, ages
 
 
 """
