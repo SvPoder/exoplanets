@@ -93,6 +93,11 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     np.random.seed(42)
     # galactocentric radius of simulated exoplanets
     r_obs = spatial_sampling(N)
+    # Age
+    ages = np.random.uniform(1., 10., N) # [yr] / [1-10 Gyr]
+    # Mass
+    mass = IMF_sampling(-0.6, N, Mmin=14, Mmax=55) # [Mjup]
+    mass = mass*M_jup/M_sun # [Msun]
     
     # load theoretical BD cooling model - ATMO 2020
     if points is None:
@@ -122,10 +127,6 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
         points = np.transpose(np.asarray([_age_i, _mass]))
         values = np.asarray(_teff)
 
-    # Ages and masses of simulated BDs
-    ages = np.random.uniform(1., 10., N) # [yr] / [1-10 Gyr]
-    mass = IMF_sampling(-0.6, N, Mmin=14, Mmax=55) # [Mjup]
-    mass = mass*M_jup/M_sun # [Msun]
     xi = np.transpose(np.asarray([ages, mass]))
 
     Teff     = griddata(points, values, xi)
