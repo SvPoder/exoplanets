@@ -93,9 +93,9 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     #np.random.seed(42)
     _N = int(2*N)
     # galactocentric radius of simulated exoplanets
-    r_obs = spatial_sampling(_N)
+    r_obs = spatial_sampling(N)
     # Age
-    ages = np.random.uniform(1., 10., _N) # [yr] / [1-10 Gyr]
+    ages = np.random.uniform(1., 10., N) # [yr] / [1-10 Gyr]
     # Mass
     mass = IMF_sampling(-0.6, _N, Mmin=6, Mmax=75) # [Mjup]
     mass = mass*M_jup.value/M_sun.value # [Msun]
@@ -104,12 +104,10 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     # select only those objects with masses between 14 and 55 Mjup
     pos  = np.where((mass > 0.013) & (mass < 0.053))
 
-    r_obs = r_obs[pos][:N]
     mass  = mass[pos][:N]
-    ages  = ages[pos][:N]
     
     # load theoretical BD cooling model - ATMO 2020
-    path =  "../python/cluster/data/"
+    path =  "./data/"
     path  = path 
     M     = []
     age   = {}
@@ -181,11 +179,19 @@ def mock_population_sens(N, rel_unc_Tobs, rel_mass,
     #np.random.seed(42)
     _N = int(1.5*N)
     # galactocentric radius of simulated exoplanets
-    r_obs = spatial_sampling(_N)
+    r_obs = spatial_sampling(N)
     # Ages and masses of simulated BDs
-    ages = np.random.uniform(1., 10., _N) # [yr] / [1-10 Gyr]
+    ages = np.random.uniform(1., 10., N) # [yr] / [1-10 Gyr]
     mass = IMF_sampling(-0.6, _N, Mmin=6, Mmax=75) # [Mjup]
     mass = mass*M_jup/M_sun # [Msun]
+
+    # add Gaussian noise
+    mass = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=_N)
+    # select only those objects with masses between 14 and 55 Mjup
+    pos  = np.where((mass > 0.013) & (mass < 0.053))
+
+    mass  = mass[pos][:N]
+
     xi = np.transpose(np.asarray([ages, mass]))
 
     Teff     = griddata(points, values, xi) # true Teff [K]
@@ -195,14 +201,11 @@ def mock_population_sens(N, rel_unc_Tobs, rel_mass,
     Tobs = temperature_withDM(r_obs, heat_int, f=f_true, R=R_jup.value,
                            M=mass*M_sun.value,
                            parameters=[gamma_true, rs_true, rho0_true])
-    # add noise
+    # add Gaussian noise
     Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=_N)
-    mass = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=_N)
-    # select only those objects with masses between 14 and 55 Mjup
-    pos  = np.where((mass > 0.013) & (mass < 0.053))
     
     # estimated Teff [K]
-    xi = np.transpose(np.asarray([ages[pos][:N], mass[pos][:N]]))
+    xi = np.transpose(np.asarray([ages, mass]))
     Teff = griddata(points, values, xi)
 
     #return
