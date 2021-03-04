@@ -15,16 +15,16 @@ def display_values(XX, YY, H, ax=False):
         for i in range(YY.shape[0]-1):
             for j in range(XX.shape[1]-1):
                 ax.text((XX[i+1][0] + XX[i][0])/2, (YY[0][j+1] + YY[0][j])/2, '%i' % H[i, j],
-                     horizontalalignment='center', verticalalignment='center')
+                     horizontalalignment='center', verticalalignment='center', size=20)
     else:
         for i in range(YY.shape[0]-1):
             for j in range(XX.shape[1]-1):
                 plt.text((XX[i+1][0] + XX[i][0])/2, (YY[0][j+1] + YY[0][j])/2, '%i' % H[i, j],
-                     horizontalalignment='center', verticalalignment='center')
+                     horizontalalignment='center', verticalalignment='center', size=20)
     # return
     return
 
-def sensitivity_grid_ex1(filepath, nBDs, rel_unc, 
+def sensitivity_grid_ex1_f(filepath, nBDs, rel_unc, 
                      ax=False, show_bin_values=True):
     """
     Plot # of H0 acceptance out of rank in (f, gamma) plane
@@ -51,7 +51,7 @@ def sensitivity_grid_ex1(filepath, nBDs, rel_unc,
     return
 
 
-def sensitivity_grid(filepath, nBDs, rel_unc, relM,
+def sensitivity_grid_f(filepath, nBDs, rel_unc, relM,
                      ax=False, show_bin_values=True):
     """
     Plot # of H0 acceptance out of rank in (f, gamma) plane
@@ -72,6 +72,58 @@ def sensitivity_grid(filepath, nBDs, rel_unc, relM,
     cmap = colors.ListedColormap(["#3F5F5F", "#FFFF66"])
     ax.pcolormesh(xi, yi, zi, norm=norm, cmap=cmap, edgecolor="black")
     
+    if show_bin_values:
+        display_values(xi, yi, zi, ax=ax)
+    # return
+    return
+
+def sensitivity_grid(filepath, nBDs, rel_unc, relM, ex="ex3",
+                     ax=False, y_label=None, x_label=None, 
+                     show_bin_values=True):
+    """
+    Plot # of H0 acceptance out of rank in (f, gamma) plane
+    """
+    # grid points
+    rs    = np.array([5., 10., 20.])
+    gamma = np.array([0., 0.5, 1, 1.3, 1.5])
+
+    zi = np.genfromtxt(filepath + "sensitivity_" + ex +
+                       ("_N%i_relunc%.2f_relM%.2f" %(nBDs, rel_unc, relM)))
+
+    #print(zi.shape)
+    xi = np.array([2.5, 7.5, 15, 25])
+    yi = np.array([0., 0.25, 0.75, 1.15, 1.4, 1.6])
+    xi, yi = np.meshgrid(xi, yi, indexing="ij")
+    
+    if ax==False:
+        fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+    if y_label is not None:
+        ax.set_ylabel(r"$\gamma$"); 
+    if x_label is not None:
+        ax.set_xlabel(r"$r_s$ [kpc]")
+    
+    norm = colors.BoundaryNorm(boundaries=np.array([0, 5, 100]), ncolors=2)
+    cmap = colors.ListedColormap(["#3F5F5F", "#FFFF66"])
+    ax.pcolormesh(xi, yi, zi, norm=norm, cmap=cmap, edgecolor="black")
+    
+    ax.set_xticks(rs)
+    ax.set_xticklabels(['5', '10', '20'])
+    ax.set_yticks(gamma)
+    ax.set_yticklabels(['0', '0.5', '1', '1.3', '1.5'])
+
+    for axis in ['top','bottom','left','right']:
+        ax.spines[axis].set_linewidth(2.)
+
+    text_box = AnchoredText((r"N=%i, $\sigma_T$=%i" %(nBDs, int(rel_unc*100)) 
+                            + "$\%, $" 
+                            + "$\sigma_M$=%i" %(int(relM*100)) + "$\%$"),
+                            bbox_to_anchor=(0., 0.99),
+                            bbox_transform=ax.transAxes, loc='lower left', 
+                            pad=0.04, prop=dict(size=20))
+        
+    plt.setp(text_box.patch, facecolor="white")
+    ax.add_artist(text_box)
+
     if show_bin_values:
         display_values(xi, yi, zi, ax=ax)
     # return
