@@ -91,7 +91,7 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     6) Estimated masses have an uncertainty of rel_mass
     """
     #np.random.seed(42)
-    _N = int(1.5*N)
+    _N = int(2*N)
     # galactocentric radius of simulated exoplanets
     r_obs = spatial_sampling(_N)
     # Age
@@ -99,6 +99,14 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     # Mass
     mass = IMF_sampling(-0.6, _N, Mmin=6, Mmax=75) # [Mjup]
     mass = mass*M_jup.value/M_sun.value # [Msun]
+    # add Gaussian noise
+    mass = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=_N)
+    # select only those objects with masses between 14 and 55 Mjup
+    pos  = np.where((mass > 0.013) & (mass < 0.053))
+
+    r_obs = r_obs[pos][:N]
+    mass  = mass[pos][:N]
+    ages  = ages[pos][:N]
     
     # load theoretical BD cooling model - ATMO 2020
     path =  "../python/cluster/data/"
@@ -131,16 +139,14 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
 
     Teff     = griddata(points, values, xi)
     heat_int = heat(Teff, np.ones(len(Teff))*R_jup.value)
-    
+    print(len(Teff), len(r_obs), len(heat_int), len(mass))
     # Observed velocity (internal heating + DM)
     Tobs = temperature_withDM(r_obs, heat_int, f=f_true, R=R_jup.value,
                            M=mass*M_sun.value,
                            parameters=[gamma_true, rs_true, rho0_true])
-    # add noise
-    Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=_N)
-    mass = mass + np.random.normal(loc=0, scale=(0.2*m), size=_N)
-    # select only those objects with masses between 14 and 55 Mjup
-    pos  = np.where((mass > 0.013) & (mass < 0.053))
+    # add Gaussian noise
+    Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=N)
+    
 
     #m_obs = np.zeros(len(mass))
     #for i in range(len(mass)):
@@ -150,7 +156,8 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     #            m_obs[i] = mass[i] + np.random.normal(loc=0, scale=(0.2*mass[i]))
 
     #return
-    return r_obs[pos][:N], Tobs[pos][:N], mass[pos][:N], ages[pos][:N]
+    #return r_obs, Tobs, heat_int
+    return r_obs, Tobs, mass, ages
 
 
 def mock_population_sens(N, rel_unc_Tobs, rel_mass, 
