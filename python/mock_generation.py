@@ -76,7 +76,7 @@ def IMF_sampling(alpha, size, Mmin=14, Mmax=55):
     return ((Mmax**(alpha+1) - Mmin**(alpha+1))*y + Mmin**(alpha+1))**(1./(alpha+1))
 
 def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
-                    rs_true=20, rho0_true=0.42, points=None, values=None):
+                    rs_true, rho0_true=0.42):
     """
     Generate N observed exoplanets
 
@@ -90,42 +90,42 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     5) Tobs has relative uncertainty rel_unc_Tobs
     6) Estimated masses have an uncertainty of rel_mass
     """
-    np.random.seed(42)
+    #np.random.seed(42)
+    _N = int(1.5*N)
     # galactocentric radius of simulated exoplanets
-    r_obs = spatial_sampling(N)
+    r_obs = spatial_sampling(_N)
     # Age
-    ages = np.random.uniform(1., 10., N) # [yr] / [1-10 Gyr]
+    ages = np.random.uniform(1., 10., _N) # [yr] / [1-10 Gyr]
     # Mass
-    mass = IMF_sampling(-0.6, N, Mmin=14, Mmax=55) # [Mjup]
-    mass = mass*M_jup/M_sun # [Msun]
+    mass = IMF_sampling(-0.6, _N, Mmin=6, Mmax=75) # [Mjup]
+    mass = mass*M_jup.value/M_sun.value # [Msun]
     
     # load theoretical BD cooling model - ATMO 2020
-    if points is None:
-        path =  "../data/evolution_models/ATMO_2020_models/evolutionary_tracks/"
-        model = "ATMO_CEQ/"
-        path  = path + model
-        M     = []
-        age   = {}
-        Teff  = {}
-        files = glob.glob(path + "*.txt")
-        for file in files:
-            data = np.genfromtxt(file, unpack=True)
-            age[data[0][0]]  = data[1] # age [Gyr]
-            Teff[data[0][0]] = data[2] # Teff [K]
-            M.append(data[0][0])
+    path =  "../python/cluster/data/"
+    path  = path 
+    M     = []
+    age   = {}
+    Teff  = {}
+    files = glob.glob(path + "*.txt")
+    for file in files:
+        data = np.genfromtxt(file, unpack=True)
+        age[data[0][0]]  = data[1] # age [Gyr]
+        Teff[data[0][0]] = data[2] # Teff [K]
+        M.append(data[0][0])
 
-        _age   = np.linspace(1, 10, 100)
-        _age_i = []; _mass = []; _teff = []
-        # the first 5 masses do not have all values between 1 and 10 Gyr
-        M = np.sort(M)[5:-10] # further remove larger masses
-        for m in M:
-            Teff_interp = interp1d(age[m], Teff[m])
-            for _a in _age:
-                _age_i.append(_a)
-                _mass.append(m)
-                _teff.append(Teff_interp(_a))
-        points = np.transpose(np.asarray([_age_i, _mass]))
-        values = np.asarray(_teff)
+    _age   = np.linspace(1, 10, 100)
+    _age_i = []; _mass = []; _teff = []
+    # the first 5 masses do not have all values between 1 and 10 Gyr
+    M = np.sort(M)[5:-10] # further remove larger masses
+    for m in M:
+        Teff_interp = interp1d(age[m], Teff[m])
+        for _a in _age:
+            _age_i.append(_a)
+            _mass.append(m)
+            _teff.append(Teff_interp(_a))
+    points = np.transpose(np.asarray([_age_i, _mass]))
+    #print(points)
+    values = np.asarray(_teff)
 
     xi = np.transpose(np.asarray([ages, mass]))
 
@@ -137,16 +137,26 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
                            M=mass*M_sun.value,
                            parameters=[gamma_true, rs_true, rho0_true])
     # add noise
-    Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=N)
-    mass = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=N)
+    Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=_N)
+    mass = mass + np.random.normal(loc=0, scale=(0.2*m), size=_N)
+    # select only those objects with masses between 14 and 55 Mjup
+    pos  = np.where((mass > 0.013) & (mass < 0.053))
+
+    #m_obs = np.zeros(len(mass))
+    #for i in range(len(mass)):
+    #    m_obs[i] = mass[i] + np.random.normal(loc=0, scale=(0.2*mass[i]))
+    #    if m_obs[i] > 0.053 or m_obs[i] < 0.013:
+    #        while m_obs[i] > 0.053 or m_obs[i] < 0.013:
+    #            m_obs[i] = mass[i] + np.random.normal(loc=0, scale=(0.2*mass[i]))
+
     #return
-    return r_obs, Tobs, mass, ages
+    return r_obs[pos][:N], Tobs[pos][:N], mass[pos][:N], ages[pos][:N]
 
 
 def mock_population_sens(N, rel_unc_Tobs, rel_mass, 
                          points, values,
                          f_true, gamma_true,
-                         rs_true=20, rho0_true=0.42):
+                         rs_true, rho0_true=0.42):
     """
     Generate N observed exoplanets - intended to be run with sensitivity
     analysis
@@ -162,12 +172,12 @@ def mock_population_sens(N, rel_unc_Tobs, rel_mass,
     6) Estimated masses have an uncertainty of rel_mass
     """
     #np.random.seed(42)
+    _N = int(1.5*N)
     # galactocentric radius of simulated exoplanets
-    r_obs = spatial_sampling(N)
-
+    r_obs = spatial_sampling(_N)
     # Ages and masses of simulated BDs
-    ages = np.random.uniform(1., 10., N) # [yr] / [1-10 Gyr]
-    mass = IMF_sampling(-0.6, N, Mmin=14, Mmax=55) # [Mjup]
+    ages = np.random.uniform(1., 10., _N) # [yr] / [1-10 Gyr]
+    mass = IMF_sampling(-0.6, _N, Mmin=6, Mmax=75) # [Mjup]
     mass = mass*M_jup/M_sun # [Msun]
     xi = np.transpose(np.asarray([ages, mass]))
 
@@ -179,12 +189,14 @@ def mock_population_sens(N, rel_unc_Tobs, rel_mass,
                            M=mass*M_sun.value,
                            parameters=[gamma_true, rs_true, rho0_true])
     # add noise
-    Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=N)
-    mass = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=N)
+    Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=_N)
+    mass = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=_N)
+    # select only those objects with masses between 14 and 55 Mjup
+    pos  = np.where((mass > 0.013) & (mass < 0.053))
     
     # estimated Teff [K]
-    xi = np.transpose(np.asarray([ages, mass]))
+    xi = np.transpose(np.asarray([ages[pos][:N], mass[pos][:N]]))
     Teff = griddata(points, values, xi)
 
     #return
-    return Tobs, Teff
+    return Tobs[pos][:N], Teff
