@@ -1,3 +1,4 @@
+import sys
 import pickle
 from scipy.stats import gaussian_kde
 import numpy as np
@@ -77,7 +78,7 @@ def sensitivity_grid_f(filepath, nBDs, rel_unc, relM,
     # return
     return
 
-def sensitivity_grid(filepath, nBDs, rel_unc, relM, ex="ex3",
+def grid_sensitivity(filepath, nBDs, rel_unc, relM, ex="ex3",
                      ax=False, y_label=None, x_label=None, 
                      show_bin_values=True):
     """
@@ -99,17 +100,22 @@ def sensitivity_grid(filepath, nBDs, rel_unc, relM, ex="ex3",
         fig, ax = plt.subplots(1, 1, figsize=(5, 5))
     if y_label is not None:
         ax.set_ylabel(r"$\gamma$"); 
+        ax.set_yticks(gamma)
+        ax.set_yticklabels(['0', '0.5', '1', '1.3', '1.5'])
+    else:
+        ax.set_yticks(gamma)
+        ax.set_yticklabels([])
     if x_label is not None:
         ax.set_xlabel(r"$r_s$ [kpc]")
+        ax.set_xticks(rs)
+        ax.set_xticklabels(['5', '10', '20'])
+    else:
+        ax.set_xticks(rs)
+        ax.set_xticklabels([])
     
     norm = colors.BoundaryNorm(boundaries=np.array([0, 5, 100]), ncolors=2)
     cmap = colors.ListedColormap(["#3F5F5F", "#FFFF66"])
     ax.pcolormesh(xi, yi, zi, norm=norm, cmap=cmap, edgecolor="black")
-    
-    ax.set_xticks(rs)
-    ax.set_xticklabels(['5', '10', '20'])
-    ax.set_yticks(gamma)
-    ax.set_yticklabels(['0', '0.5', '1', '1.3', '1.5'])
 
     for axis in ['top','bottom','left','right']:
         ax.spines[axis].set_linewidth(2.)
@@ -126,6 +132,145 @@ def sensitivity_grid(filepath, nBDs, rel_unc, relM, ex="ex3",
 
     if show_bin_values:
         display_values(xi, yi, zi, ax=ax)
+    # return
+    return
+
+
+# -----------------------------------
+## FSE
+# -----------------------------------
+def FSE_f_gamma_rs(filepath, nBDs, rel_unc, relM, ex, rank=100, PE="median"):
+    # grid points
+    f     = 1.
+    rs    = np.array([5., 10., 20.])
+    gamma = np.array([0., 0.5, 1, 1.3, 1.5])
+
+    FSE_1 = []; FSE_2 = []; FSE_3 = []
+    for _rs in rs:
+        for _g in gamma:
+            true = [f, _g, _rs]
+            data = np.genfromtxt(filepath + "statistics_" + ex + 
+                                 ("_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1frs%.1f" 
+                                  %(nBDs, rel_unc, relM, f, _g, _rs)), unpack=True)
+            if PE=="median":
+                pe = np.array((data[3], data[4], data[5]))
+            else:
+                sys.exit("Need to implement other point estimates")
+            FSE_1.append(np.sqrt(1/rank*np.sum(np.power(pe[0] - true[0], 2)))/true[0])
+            if np.abs(_g) < 1e-5:
+                epsilon=1e-4
+            else:
+                epsilon=0.
+            FSE_2.append(np.sqrt(1/rank*np.sum(np.power(pe[1] - true[1], 2)))/(true[1]+epsilon))
+            FSE_3.append(np.sqrt(1/rank*np.sum(np.power(pe[2] - true[2], 2)))/true[2])
+
+    xi = np.array([2.5, 7.5, 15, 25])
+    yi = np.array([0., 0.25, 0.75, 1.15, 1.4, 1.6])
+    xi, yi = np.meshgrid(xi, yi, indexing="ij")
+
+    zi_1   = np.array(FSE_1).reshape(len(rs), len(gamma))
+    zi_2   = np.array(FSE_2).reshape(len(rs), len(gamma))
+    zi_3   = np.array(FSE_3).reshape(len(rs), len(gamma))
+    # return
+    return xi, yi, zi_1, zi_2, zi_3
+
+def grid_FSE(filepath, nBDs, rel_unc, relM, ex="ex3", 
+             ax=False, PE="median", 
+             plot_f=True, plot_g=False, ylabel=False, xlabel=False,
+             rank=100):
+    """
+    Plot FSE grid in (rs, gamma) 
+    """
+
+    norm = colors.BoundaryNorm(boundaries=np.arange(0, 1, 0.05), ncolors=256)
+    
+    xi, yi, zi_1, zi_2, zi_3 = FSE_f_gamma_rs(filepath, nBDs, rel_unc, relM,
+                                              ex, rank=rank, PE=PE)
+    if ax==False:
+        fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+    if plot_f==True:
+        im = ax.pcolormesh(xi, yi, zi_1, norm=norm, cmap="magma_r")
+    elif plot_g==True:
+        im = ax.pcolormesh(xi, yi, zi_2, norm=norm, cmap="viridis_r")
+    else:
+        im = ax.pcolormesh(xi, yi, zi_3, norm=norm, cmap="cividis_r")
+    if ylabel==True:
+        ax.set_ylabel(r"$\gamma$")
+        ax.set_yticklabels(['0', '0.5', '1', '1.3', '1.5'])
+    else:
+        ax.set_yticklabels([])
+    if xlabel==True:
+        ax.set_xlabel(r"$r_s$ [kpc]")
+        ax.set_xticklabels(['5', '10', '20'])
+    else:
+        ax.set_xticklabels([])
+
+    text_box = AnchoredText((r"N=%i, $\sigma_T$=%i" %(nBDs, int(rel_unc*100)) 
+                            + "$\%, $" 
+                            + "$\sigma_M$=%i" %(int(relM*100)) + "$\%$"), 
+                            frameon=True, loc=2, pad=0.2, prop=dict(size=20))
+    plt.setp(text_box.patch, facecolor="white")
+    ax.add_artist(text_box)
+
+    ax.set_xticks([5., 10., 20.])
+    ax.set_yticks([0., 0.5, 1, 1.3, 1.5])
+
+    for axis in ['top','bottom','left','right']:
+        ax.spines[axis].set_linewidth(2.5)
+
+    # return
+    return im
+
+# -----------------------------------
+## Posterior
+# -----------------------------------
+
+def plot_1Dposterior(filepath, nBDs, rel_unc, relM, ex,
+                     f, gamma, rs, color="k"):
+    fig, axes = plt.subplots(1, 3, figsize=(16, 5), sharey=True)
+    
+    xvals = [np.linspace(0, 1, 100), np.linspace(0, 2, 100), 
+             np.linspace(0, 50, 100)]
+
+    true = [f, gamma, rs]
+
+    for i, ax in enumerate(axes.flat):
+        for j in range(100):
+            _file   = open(filepath + "posterior_" + ex + 
+                           ("_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1frs%.1fv%i" 
+                           %(nBDs, rel_unc, relM, f, gamma, rs, j)), "rb") 
+            samples = pickle.load(_file)
+            kde   = gaussian_kde(samples.T[i])
+            ax.plot(xvals[i], kde(xvals[i])/np.max(kde(xvals[i])), 
+                    color=color, lw=2.5, 
+                    alpha=0.3)
+        ax.axvline(true[i], ls="--", lw=2.5, color="red")
+        if i==0:
+            ax.set_xlabel(r"$f$")
+            ax.set_xticks([0.1, 0.3, 0.5, 0.7, 0.9])
+            ax.set_xticklabels(['0.1', '0.3', '0.5', '0.7', '0.9'])
+            text_box = AnchoredText((r"N=%i, $\sigma_T$=%i" %(nBDs, int(rel_unc*100)) 
+                                + "$\%, $" 
+                                + "$\sigma_M$=%i" %(int(relM*100)) + "$\%$"),
+                                bbox_to_anchor=(0., 0.99),
+                                bbox_transform=ax.transAxes, loc='lower left', 
+                                pad=0.04, prop=dict(size=20))
+            plt.setp(text_box.patch, facecolor="white")
+            ax.add_artist(text_box)
+        elif i==1:
+            ax.set_xlabel(r"$\gamma$")
+            ax.set_xticks([0.2, 0.6, 1.0, 1.4, 1.8])
+            ax.set_xticklabels(['0.2', '0.6', '1', '1.4', '1.8'])
+        else:
+            ax.set_xlabel(r"$r_s$ [kpc]")
+
+        for axis in ['top','bottom','left','right']:
+            ax.spines[axis].set_linewidth(2.)
+    
+    fig.subplots_adjust(hspace=0.25, wspace=0.08)
+    fig.savefig("./1Dposterior_" + ex + 
+                ("_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1frs%i.pdf" 
+                %(nBDs, rel_unc, relM, f, gamma, int(rs))), bbox_inches="tight")
     # return
     return
 
