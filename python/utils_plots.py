@@ -79,7 +79,7 @@ def sensitivity_grid_f(filepath, nBDs, rel_unc, relM,
     return
 
 def grid_sensitivity(filepath, nBDs, rel_unc, relM, ex="ex3",
-                     ax=False, y_label=None, x_label=None, 
+                     ax=False, y_label=True, x_label=True, 
                      show_bin_values=True):
     """
     Plot # of H0 acceptance out of rank in (f, gamma) plane
@@ -98,14 +98,14 @@ def grid_sensitivity(filepath, nBDs, rel_unc, relM, ex="ex3",
     
     if ax==False:
         fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-    if y_label is not None:
+    if y_label==True:
         ax.set_ylabel(r"$\gamma$"); 
         ax.set_yticks(gamma)
         ax.set_yticklabels(['0', '0.5', '1', '1.3', '1.5'])
     else:
         ax.set_yticks(gamma)
         ax.set_yticklabels([])
-    if x_label is not None:
+    if x_label==True:
         ax.set_xlabel(r"$r_s$ [kpc]")
         ax.set_xticks(rs)
         ax.set_xticklabels(['5', '10', '20'])

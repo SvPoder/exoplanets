@@ -1,7 +1,7 @@
 import numpy as np
 import pickle
 
-def statistics(filepath, nBDs, rel_unc, relM, f, gamma, rs=20., rank=100, D=2):
+def statistics(filepath, nBDs, rel_unc, relM, f, gamma, rs, rank=100, D=2):
     """
     Calculate mean, median, MAP & ML point estimates
 
@@ -38,8 +38,8 @@ def statistics(filepath, nBDs, rel_unc, relM, f, gamma, rs=20., rank=100, D=2):
             MAP[j][i]    = _bins[np.argmax(_n)]
             ML[j][i]     = samples[:, j][np.argmax(like)]
 
-    output = open(filepath + ("statistics_ex3_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1f" 
-                              %(nBDs, rel_unc, relM, f, gamma)), 
+    output = open(filepath + ("statistics_ex3_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1frs%.1f" 
+                              %(nBDs, rel_unc, relM, f, gamma, rs)), 
                   "w")
     for i in range(rank):
         for j in range(D):
@@ -58,19 +58,20 @@ def statistics(filepath, nBDs, rel_unc, relM, f, gamma, rs=20., rank=100, D=2):
 
 
 if __name__ == '__main__':
-    filepath = "/Users/mariabenito/Desktop/results/ex3/N10000_relunc0.10/"
-    nBDs     = [10000]
-    rel_unc  = [0.10]
-    rel_M    = [0.20]
-    f        = [0.7]
-    gamma    = [1.0]
+    filepath = "/Users/mariabenito/Desktop/results/"
+    nBDs     = [1000]
+    rel_unc  = [0.1]
+    rel_M    = [0.1]
+    f        = 1.
+    rs       = [5., 10., 20.]
+    gamma    = [0., 0.5, 1., 1.3, 1.5]
 
     for N in nBDs:
         for rel in rel_unc:
             for relM in rel_M:
                 print(N, rel, relM)
-                for _f in f:
+                for _rs in rs:
                     for _g in gamma:
-                        print(_f, _g)
-                        statistics(filepath, N, rel, relM, _f, _g, 20., 100, 3)
+                        print(_rs, _g)
+                        statistics(filepath, N, rel, relM, f, _g, _rs, 100, 3)
 

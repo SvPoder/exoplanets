@@ -177,20 +177,21 @@ def mock_population_sens(N, rel_unc_Tobs, rel_mass,
     6) Estimated masses have an uncertainty of rel_mass
     """
     #np.random.seed(42)
-    _N = int(1.5*N)
+    _N = int(2*N)
     # galactocentric radius of simulated exoplanets
     r_obs = spatial_sampling(N)
     # Ages and masses of simulated BDs
     ages = np.random.uniform(1., 10., N) # [yr] / [1-10 Gyr]
     mass = IMF_sampling(-0.6, _N, Mmin=6, Mmax=75) # [Mjup]
-    mass = mass*M_jup/M_sun # [Msun]
+    mass = mass*M_jup.value/M_sun.value # [Msun]
 
     # add Gaussian noise
-    mass = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=_N)
+    mass_wn = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=_N)
     # select only those objects with masses between 14 and 55 Mjup
-    pos  = np.where((mass > 0.013) & (mass < 0.053))
+    pos  = np.where((mass_wn > 0.013) & (mass_wn < 0.053))
 
-    mass  = mass[pos][:N]
+    mass     = mass[pos][:N]
+    mass_wn  = mass_wn[pos][:N]
 
     xi = np.transpose(np.asarray([ages, mass]))
 
@@ -202,11 +203,11 @@ def mock_population_sens(N, rel_unc_Tobs, rel_mass,
                            M=mass*M_sun.value,
                            parameters=[gamma_true, rs_true, rho0_true])
     # add Gaussian noise
-    Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=_N)
+    Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=N)
     
     # estimated Teff [K]
-    xi = np.transpose(np.asarray([ages, mass]))
+    xi = np.transpose(np.asarray([ages, mass_wn]))
     Teff = griddata(points, values, xi)
 
     #return
-    return Tobs[pos][:N], Teff
+    return Tobs, Teff
