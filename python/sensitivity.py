@@ -132,8 +132,8 @@ def sensitivity_nBDs_relunc(filepath, nBDs, rel_unc, relM, points, values,
 
 if __name__ == '__main__':
     
-    nBDs    = [100000]
-    rel_unc = [0.05]#, 0.10, 0.20]
+    nBDs    = [1000, 10000]
+    rel_unc = [0.20]#, 0.10, 0.20]
     relM    = [0.10, 0.20]#, 0.20]
     # ------------------------------------------------------------------------
     # load theoretical BD cooling model - ATMO 2020

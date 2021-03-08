@@ -59,7 +59,7 @@ def statistics(filepath, nBDs, rel_unc, relM, f, gamma, rs, rank=100, D=2):
 
 if __name__ == '__main__':
     filepath = "/Users/mariabenito/Desktop/results/"
-    nBDs     = [1000]
+    nBDs     = [10000]
     rel_unc  = [0.1]
     rel_M    = [0.1]
     f        = 1.
