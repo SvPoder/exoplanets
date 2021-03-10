@@ -25,7 +25,7 @@ rs_true    = float(sys.argv[5])
 # --------- MCMC fitting -> change to another file -----------------------
 def lnprior(p):
     f, gamma, rs = p
-    if ( 0. < gamma < 2. and 0. < f < 1. and 0.01 < rs < 50.):
+    if ( 0. < gamma < 3. and 0. < f < 1. and 0.01 < rs < 50.):
         return 0.
     return -np.inf
 
