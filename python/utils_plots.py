@@ -5,8 +5,9 @@ import numpy as np
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import AnchoredText
-from matplotlib import rc
-rc('font', family='times new roman', size=22.)
+import matplotlib.patches as mpatches
+#from matplotlib import rc
+#rc('font', family='times new roman', size=22.)
 
 # -----------------------------------
 ## Sensitivity
@@ -139,6 +140,16 @@ def grid_sensitivity(filepath, nBDs, rel_unc, relM, ex="ex3",
 # -----------------------------------
 ## FSE
 # -----------------------------------
+def add_hatch(ax, i, j, width, height):
+    ax.add_patch(mpatches.Rectangle(
+              (i, j),
+              width,
+              height, 
+              fill=False, 
+              color='yellow', linewidth=0.,
+              hatch='//')) # the more slashes, the denser the hash lines 
+    return
+
 def FSE_f_gamma_rs(filepath, nBDs, rel_unc, relM, ex, rank=100, PE="median"):
     # grid points
     f     = 1.
@@ -205,10 +216,11 @@ def grid_FSE(filepath, nBDs, rel_unc, relM, ex="ex3",
     else:
         ax.set_xticklabels([])
 
-    text_box = AnchoredText((r"N=%i, $\sigma_T$=%i" %(nBDs, int(rel_unc*100)) 
+    text_box = AnchoredText((r"$N=10^{%i}$, $\sigma_T$=%i" 
+                            %(int(np.log10(nBDs)), int(rel_unc*100)) 
                             + "$\%, $" 
                             + "$\sigma_M$=%i" %(int(relM*100)) + "$\%$"), 
-                            frameon=True, loc=2, pad=0.2, prop=dict(size=20))
+                            frameon=True, loc=3, pad=0.2, prop=dict(size=20))
     plt.setp(text_box.patch, facecolor="white")
     ax.add_artist(text_box)
 
@@ -220,6 +232,7 @@ def grid_FSE(filepath, nBDs, rel_unc, relM, ex="ex3",
 
     # return
     return im
+
 
 # -----------------------------------
 ## Posterior
