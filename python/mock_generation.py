@@ -100,15 +100,17 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     mass = IMF_sampling(-0.6, _N, Mmin=6, Mmax=75) # [Mjup]
     mass = mass*M_jup.value/M_sun.value # [Msun]
     # add Gaussian noise
-    mass = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=_N)
+    mass_wn = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=_N)
     # select only those objects with masses between 14 and 55 Mjup
-    pos  = np.where((mass > 0.013) & (mass < 0.053))
+    pos  = np.where((mass_wn > 0.013) & (mass_wn < 0.053))
 
-    mass  = mass[pos][:N]
+    mass     = mass[pos][:N]
+    mass_wn  = mass_wn[pos][:N]
     
     # load theoretical BD cooling model - ATMO 2020
     path =  "./data/"
-    path  = path 
+    #path = "/Users/mariabenito/Dropbox/exoplanets/DM/python/cluster/data/"
+    #path  = path 
     M     = []
     age   = {}
     Teff  = {}
@@ -130,14 +132,13 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
             _mass.append(m)
             _teff.append(Teff_interp(_a))
     points = np.transpose(np.asarray([_age_i, _mass]))
-    #print(points)
     values = np.asarray(_teff)
 
     xi = np.transpose(np.asarray([ages, mass]))
 
     Teff     = griddata(points, values, xi)
     heat_int = heat(Teff, np.ones(len(Teff))*R_jup.value)
-    print(len(Teff), len(r_obs), len(heat_int), len(mass))
+    #print(len(Teff), len(r_obs), len(heat_int), len(mass))
     # Observed velocity (internal heating + DM)
     Tobs = temperature_withDM(r_obs, heat_int, f=f_true, R=R_jup.value,
                            M=mass*M_sun.value,
@@ -154,8 +155,7 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     #            m_obs[i] = mass[i] + np.random.normal(loc=0, scale=(0.2*mass[i]))
 
     #return
-    #return r_obs, Tobs, heat_int
-    return r_obs, Tobs, mass, ages
+    return r_obs, Tobs, mass_wn, ages
 
 
 def mock_population_sens(N, rel_unc_Tobs, rel_mass, 
