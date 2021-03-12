@@ -121,9 +121,8 @@ def grid_sensitivity(filepath, nBDs, rel_unc, relM, ex="ex3",
     for axis in ['top','bottom','left','right']:
         ax.spines[axis].set_linewidth(2.)
 
-    text_box = AnchoredText((r"N=%i, $\sigma_T$=%i" %(nBDs, int(rel_unc*100)) 
-                            + "$\%,$ " 
-                            + "$\sigma_M$=%i" %(int(relM*100)) + "$\%$"),
+    text_box = AnchoredText((r"$N=10^{%i}$"
+                            %int(np.log10(nBDs))),
                             bbox_to_anchor=(0., 0.99),
                             bbox_transform=ax.transAxes, loc='lower left', 
                             pad=0.07, prop=dict(size=19))
