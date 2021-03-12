@@ -78,12 +78,67 @@ def sensitivity_grid_f(filepath, nBDs, rel_unc, relM,
         display_values(xi, yi, zi, ax=ax)
     # return
     return
-
 def grid_sensitivity(filepath, nBDs, rel_unc, relM, ex="ex3",
-                     ax=False, y_label=True, x_label=True, 
+                     ax=False, y_label=True, x_label=True,
                      show_bin_values=True):
     """
-    Plot # of H0 acceptance out of rank in (f, gamma) plane
+    Plot # of H0 acceptance out of rank in (rs, gamma) plane
+    """
+    # grid points
+    rs    = np.array([5., 10., 20.])
+    gamma = np.array([0., 0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])
+
+    zi = np.genfromtxt(filepath + "sensitivity_" + ex +
+                       ("_N%i_relunc%.2f_relM%.2f" %(nBDs, rel_unc, relM)))
+
+    #print(zi.shape)
+    xi = np.array([2.5, 7.5, 15, 25])
+    yi = np.array([0., 0.25, 0.75, 1.05, 1.15, 1.25, 1.35,  1.45, 1.55])
+    xi, yi = np.meshgrid(xi, yi, indexing="ij")
+
+    if ax==False:
+        fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+    if y_label==True:
+        ax.set_ylabel(r"$\gamma$");
+        ax.set_yticks(gamma)
+        ax.set_yticklabels(['0', '0.5', '1', '1.1', '1.2', '1.3', '1.4', '1.5'])
+    else:
+        ax.set_yticks(gamma)
+        ax.set_yticklabels([])
+    if x_label==True:
+        ax.set_xlabel(r"$r_s$ [kpc]")
+        ax.set_xticks(rs)
+        ax.set_xticklabels(['5', '10', '20'])
+    else:
+        ax.set_xticks(rs)
+        ax.set_xticklabels([])
+
+    norm = colors.BoundaryNorm(boundaries=np.array([0, 5, 100]), ncolors=2)
+    cmap = colors.ListedColormap(["#3F5F5F", "#FFFF66"])
+    ax.pcolormesh(xi, yi, zi, norm=norm, cmap=cmap, edgecolor="black")
+
+    for axis in ['top','bottom','left','right']:
+        ax.spines[axis].set_linewidth(2.)
+
+    text_box = AnchoredText((r"$N=10^{%i}$"
+                            %int(np.log10(nBDs))),
+                            bbox_to_anchor=(0., 0.99),
+                            bbox_transform=ax.transAxes, frameon=False,
+                            pad=0., loc="lower left", prop=dict(size=17))
+
+    ax.add_artist(text_box)
+
+    if show_bin_values:
+        display_values(xi, yi, zi, ax=ax)
+    # return
+    return
+
+
+def grid_sensitivity_coarse(filepath, nBDs, rel_unc, relM, ex="ex3",
+                            ax=False, y_label=True, x_label=True, 
+                            show_bin_values=True):
+    """
+    Plot # of H0 acceptance out of rank in (rs, gamma) plane
     """
     # grid points
     rs    = np.array([5., 10., 20.])
