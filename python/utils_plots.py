@@ -124,10 +124,9 @@ def grid_sensitivity(filepath, nBDs, rel_unc, relM, ex="ex3",
     text_box = AnchoredText((r"$N=10^{%i}$"
                             %int(np.log10(nBDs))),
                             bbox_to_anchor=(0., 0.99),
-                            bbox_transform=ax.transAxes, loc='lower left', 
-                            pad=0.07, prop=dict(size=19))
+                            bbox_transform=ax.transAxes, frameon=False, 
+                            pad=0., loc="lower left", prop=dict(size=19))
         
-    plt.setp(text_box.patch, facecolor="white")
     ax.add_artist(text_box)
 
     if show_bin_values:
