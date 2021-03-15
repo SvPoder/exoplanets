@@ -627,7 +627,7 @@ def hist2d(x, y, bins=20, range=None, weights=None, levels=None, smooth=None,
         if contour_kwargs is None:
             contour_kwargs = dict()
         contour_kwargs["colors"] = contour_kwargs.get("colors", color)
-        ax.contour(X2, Y2, H2.T, V, alpha=0.3, linewidths=2.5, 
+        ax.contour(X2, Y2, H2.T, V, alpha=1., linewidths=2.5, 
                    **contour_kwargs)
 
     ax.set_xlim(range[0])

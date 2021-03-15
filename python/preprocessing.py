@@ -51,12 +51,12 @@ def statistics(filepath, nBDs, rel_unc, relM, f, gamma, rs, rank=100, D=2):
 
 if __name__ == '__main__':
     filepath = "/scratch/mariacst/exoplanets/results/"
-    nBDs     = [1000]
+    nBDs     = [100000]
     rel_unc  = [0.1]
-    rel_M    = [0.1, 0.2]
+    rel_M    = [0.2]
     f        = 1.
-    rs       = [5., 10., 20.]
-    gamma    = [1.1, 1.2, 1.4]
+    rs       = [5.]
+    gamma    = [0., 0.5, 1., 1.1, 1.2]
 
     for N in nBDs:
         for rel in rel_unc:
