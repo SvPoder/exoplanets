@@ -6,8 +6,8 @@ import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import AnchoredText
 import matplotlib.patches as mpatches
-#from matplotlib import rc
-#rc('font', family='times new roman', size=22.)
+from matplotlib import rc
+rc('font', family='times new roman', size=22.)
 
 # -----------------------------------
 ## Sensitivity
@@ -384,12 +384,14 @@ def plot_1Dposterior(filepath, nBDs, rel_unc, relM, ex,
              np.linspace(0, 50, 100)]
 
     true = [f, gamma, rs]
+    
+    filepath = filepath + ("N%irelT%.2frelM%.2f/" %(nBDs, rel_unc, relM))
 
     for i, ax in enumerate(axes.flat):
         for j in range(100):
             _file   = open(filepath + "posterior_" + ex + 
                            ("_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1frs%.1fv%i" 
-                           %(nBDs, rel_unc, relM, f, gamma, rs, j)), "rb") 
+                           %(nBDs, rel_unc, relM, f, gamma, rs, j+1)), "rb") 
             samples = pickle.load(_file)
             kde   = gaussian_kde(samples.T[i])
             ax.plot(xvals[i], kde(xvals[i])/np.max(kde(xvals[i])), 
@@ -419,7 +421,7 @@ def plot_1Dposterior(filepath, nBDs, rel_unc, relM, ex,
             ax.spines[axis].set_linewidth(2.)
     
     fig.subplots_adjust(hspace=0.25, wspace=0.08)
-    fig.savefig("./1Dposterior_" + ex + 
+    fig.savefig("../../Figs/1Dposterior_" + ex + 
                 ("_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1frs%i.pdf" 
                 %(nBDs, rel_unc, relM, f, gamma, int(rs))), bbox_inches="tight")
     # return
