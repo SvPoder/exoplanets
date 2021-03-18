@@ -8,6 +8,7 @@ from mock_generation import mock_population_sens
 from astropy.constants import L_sun, R_jup
 from utils import temperature
 import glob
+import sys
 
 def interp_find_x(x, y, p_interp):
     try:
@@ -58,7 +59,7 @@ def sensitivity(Tobs, Teff, bins_equal, alpha=0.05):
 def sensitivity_nBDs_relunc(filepath, nBDs, rel_unc, relM, points, values, 
                             rank=100):
     f     = 1.#[0.1, 0.3, 0.5, 0.7, 0.9]
-    gamma = [0., 0.5, 1, 1.3, 1.5]
+    gamma = [0., 0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5]
     rs    = [5., 10., 20.]
     _sens = np.ones((len(rs), len(gamma)))*1000
     j = 0
@@ -124,7 +125,7 @@ def sensitivity_nBDs_relunc(filepath, nBDs, rel_unc, relM, points, values,
             k+=1
         j+=1
     # save acceptance ratio out of rank
-    np.savetxt(filepath + ("sensitivity_ex3_N%i_relunc%.2f_relM%.2f" 
+    np.savetxt(filepath + ("sensitivity_ex4_N%i_relunc%.2f_relM%.2f" 
                            %(nBDs, rel_unc, relM)), _sens)
     # return
     return
@@ -132,14 +133,15 @@ def sensitivity_nBDs_relunc(filepath, nBDs, rel_unc, relM, points, values,
 
 if __name__ == '__main__':
     
-    nBDs    = [1000, 10000]
-    rel_unc = [0.20]#, 0.10, 0.20]
-    relM    = [0.10, 0.20]#, 0.20]
+    N       = int(sys.argv[1])
+    nBDs    = [N]
+    rel_unc = [0.]#, 0.10, 0.20]
+    relM    = [0.]#, 0.20]
     # ------------------------------------------------------------------------
     # load theoretical BD cooling model - ATMO 2020
-    path  =  "../data/evolution_models/ATMO_2020_models/evolutionary_tracks/"
-    model = "ATMO_CEQ/"
-    path  = path + model
+    path  =  "./data/"
+    #model = "ATMO_CEQ/"
+    #path  = path + model
     M     = []
     age   = {}
     Teff  = {}
@@ -163,7 +165,7 @@ if __name__ == '__main__':
     points = np.transpose(np.asarray([_age_i, _mass]))
     values = np.asarray(_teff)
     # ------------------------------------------------------------------------
-    filepath = "/Users/mariabenito/Desktop/results/"
+    filepath = "/home/mariacst/exoplanets/results/"
     for n in nBDs:
         for rel in rel_unc:
             for rM in relM:

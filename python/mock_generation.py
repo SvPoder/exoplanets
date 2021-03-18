@@ -49,7 +49,8 @@ def spatial_sampling(nBDs, phi=0., theta=np.pi/2., R0=8.178):
     Sampling nBDs points from density profile rho using Von Neumann 
     acceptance-rejection technique
     """
-    ymin = 0.1; ymax = R0
+    ymin = 0.1; ymax = 1.0#R0
+    #print("maximimum observed GC distance = ", ymax)
     umin = np.min([rho(ymin, phi, theta), rho(1., phi, theta), 
                    rho(R0, phi, theta)])
     umax = np.max([rho(ymin, phi, theta), rho(1., phi, theta), 
