@@ -380,7 +380,7 @@ def plot_1Dposterior(filepath, nBDs, rel_unc, relM, ex,
                      f, gamma, rs, color="k"):
     fig, axes = plt.subplots(1, 3, figsize=(16, 5), sharey=True)
     
-    xvals = [np.linspace(0, 1, 100), np.linspace(0, 2, 100), 
+    xvals = [np.linspace(0, 1, 100), np.linspace(0, 3, 100), 
              np.linspace(0, 50, 100)]
 
     true = [f, gamma, rs]
@@ -388,6 +388,7 @@ def plot_1Dposterior(filepath, nBDs, rel_unc, relM, ex,
     filepath = filepath + ("N%irelT%.2frelM%.2f/" %(nBDs, rel_unc, relM))
 
     for i, ax in enumerate(axes.flat):
+        print("i = ", i)
         for j in range(100):
             _file   = open(filepath + "posterior_" + ex + 
                            ("_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1frs%.1fv%i" 
@@ -412,8 +413,8 @@ def plot_1Dposterior(filepath, nBDs, rel_unc, relM, ex,
             ax.add_artist(text_box)
         elif i==1:
             ax.set_xlabel(r"$\gamma$")
-            ax.set_xticks([0.2, 0.6, 1.0, 1.4, 1.8])
-            ax.set_xticklabels(['0.2', '0.6', '1', '1.4', '1.8'])
+            ax.set_xticks([0.2, 0.6, 1.0, 1.4, 1.8, 2.2, 2.6, 3.])
+            ax.set_xticklabels(['0.2', '0.6', '1', '1.4', '1.8', '2.2', '2.6', '3'])
         else:
             ax.set_xlabel(r"$r_s$ [kpc]")
 
