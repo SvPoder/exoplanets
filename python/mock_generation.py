@@ -95,8 +95,6 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     # Mass
     mass = IMF_sampling(-0.6, _N, Mmin=6, Mmax=75) # [Mjup]
     mass = mass*M_jup.value/M_sun.value # [Msun]
-    # add Gaussian noise
-    mass_wn = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=_N)
     # load theoretical BD cooling model - ATMO 2020
     path =  "./data/"
     data = np.genfromtxt(path + "./ATMO_CEQ_vega_MIRI.txt", unpack=True)
