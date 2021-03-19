@@ -309,7 +309,7 @@ def grid_FSE(filepath, nBDs, rel_unc, relM, ex="ex3",
                             %(int(np.log10(nBDs)), int(rel_unc*100))
                             + "$\%, $"
                             + "$\sigma_M$=%i" %(int(relM*100)) + "$\%$"),
-                            frameon=True, loc=3, pad=0.2, prop=dict(size=20))
+                            frameon=True, loc=3, pad=0.2, prop=dict(size=18))
     plt.setp(text_box.patch, facecolor="white")
     ax.add_artist(text_box)
 

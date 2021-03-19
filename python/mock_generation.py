@@ -194,6 +194,7 @@ def mock_population_sens(N, rel_unc_Tobs, rel_mass,
     mass     = mass[pos][:N]
     mass_wn  = mass_wn[pos][:N]
 
+    #print(len(ages), len(mass))
     xi = np.transpose(np.asarray([ages, mass]))
 
     Teff     = griddata(points, values, xi) # true Teff [K]
@@ -208,6 +209,7 @@ def mock_population_sens(N, rel_unc_Tobs, rel_mass,
     
     # estimated Teff [K]
     xi = np.transpose(np.asarray([ages, mass_wn]))
+    #print(points, values, xi)
     Teff = griddata(points, values, xi)
 
     #return

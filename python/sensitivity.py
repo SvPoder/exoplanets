@@ -133,8 +133,8 @@ def sensitivity_nBDs_relunc(filepath, nBDs, rel_unc, relM, points, values,
 
 if __name__ == '__main__':
     
-    N       = int(sys.argv[1])
-    nBDs    = [N]
+    #N       = int(sys.argv[1])
+    nBDs    = [100]
     rel_unc = [0.]#, 0.10, 0.20]
     relM    = [0.]#, 0.20]
     # ------------------------------------------------------------------------
