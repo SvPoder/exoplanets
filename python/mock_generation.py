@@ -22,7 +22,6 @@ def rho_bulge(r, phi, theta, R0=8.178, x0=0.899, y0=0.386, z0=0.250,
     return (np.exp(-np.sqrt(np.sin(theta)**2*((np.cos(phi+alpha)/x0)**2 +
                             (np.sin(phi+alpha)/y0)**2) + 
                             (np.cos(theta)/z0)**2)*r))
-
 def rho_disc(r, theta, R0=8.178, Rd=2.15, zh=0.40):
     """
     Density profile for Bovy and Rix disc [arbitrary units]
@@ -31,7 +30,6 @@ def rho_disc(r, theta, R0=8.178, Rd=2.15, zh=0.40):
     Rd = Rd*R0/8. # rescale to adopted R0 value
     # return
     return np.exp(-r*np.sin(theta)/Rd)*np.exp(-r*np.cos(theta)/zh)
-
 
 def rho(r, phi, theta, R0=8.178):
     """
@@ -55,7 +53,6 @@ def spatial_sampling(nBDs, phi=0., theta=np.pi/2., R0=8.178):
                    rho(R0, phi, theta)])
     umax = np.max([rho(ymin, phi, theta), rho(1., phi, theta), 
                    rho(R0, phi, theta)])
-    
     i = 0
     r = np.ones(nBDs)*100
     while i<nBDs:
@@ -64,8 +61,6 @@ def spatial_sampling(nBDs, phi=0., theta=np.pi/2., R0=8.178):
         if ui < rho(yi, phi, theta, R0):
             r[i] = yi
             i+=1
-        else:
-            continue
     # return 
     return r
 
