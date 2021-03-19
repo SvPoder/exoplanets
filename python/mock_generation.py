@@ -5,7 +5,7 @@
 #
 # ===========================================================================
 import numpy as np
-from scipy.interpolate import interp1d, griddata
+from scipy.interpolate import griddata
 from astropy.constants import L_sun, R_jup, M_jup, M_sun
 from utils import heat, temperature_withDM
 import glob
@@ -110,31 +110,9 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     
     # load theoretical BD cooling model - ATMO 2020
     path =  "./data/"
-    #path = "/Users/mariabenito/Dropbox/exoplanets/DM/python/cluster/data/"
-    #path  = path 
-    M     = []
-    age   = {}
-    Teff  = {}
-    files = glob.glob(path + "*.txt")
-    for file in files:
-        data = np.genfromtxt(file, unpack=True)
-        age[data[0][0]]  = data[1] # age [Gyr]
-        Teff[data[0][0]] = data[2] # Teff [K]
-        M.append(data[0][0])
-
-    _age   = np.linspace(1, 10, 100)
-    _age_i = []; _mass = []; _teff = []
-    # the first 5 masses do not have all values between 1 and 10 Gyr
-    M = np.sort(M)[5:] # further remove larger masses
-    for m in M:
-        Teff_interp = interp1d(age[m], Teff[m])
-        for _a in _age:
-            _age_i.append(_a)
-            _mass.append(m)
-            _teff.append(Teff_interp(_a))
-    points = np.transpose(np.asarray([_age_i, _mass]))
-    values = np.asarray(_teff)
-
+    data = np.genfromtxt(path + "./ATMO_CEQ_vega_MIRI.txt", unpack=True)
+    points = np.transpose(data[0:2, :])
+    values = data[2]
     xi = np.transpose(np.asarray([ages, mass]))
 
     Teff     = griddata(points, values, xi)
