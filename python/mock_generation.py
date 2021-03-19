@@ -72,7 +72,7 @@ def IMF_sampling(alpha, size, Mmin=14, Mmax=55):
     return ((Mmax**(alpha+1) - Mmin**(alpha+1))*y + Mmin**(alpha+1))**(1./(alpha+1))
 
 def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
-                    rs_true, rho0_true=0.42):
+                    rs_true, rho0_true=0.42, Tmin=0.):
     """
     Generate N observed exoplanets
 
@@ -87,22 +87,16 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     6) Estimated masses have an uncertainty of rel_mass
     """
     #np.random.seed(42)
-    _N = int(2*N)
+    _N = int(4.5*N)
     # galactocentric radius of simulated exoplanets
-    r_obs = spatial_sampling(N)
+    r_obs = spatial_sampling(_N)
     # Age
-    ages = np.random.uniform(1., 10., N) # [yr] / [1-10 Gyr]
+    ages = np.random.uniform(1., 10., _N) # [yr] / [1-10 Gyr]
     # Mass
     mass = IMF_sampling(-0.6, _N, Mmin=6, Mmax=75) # [Mjup]
     mass = mass*M_jup.value/M_sun.value # [Msun]
     # add Gaussian noise
     mass_wn = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=_N)
-    # select only those objects with masses between 14 and 55 Mjup
-    pos  = np.where((mass_wn > 0.013) & (mass_wn < 0.053))
-
-    mass     = mass[pos][:N]
-    mass_wn  = mass_wn[pos][:N]
-    
     # load theoretical BD cooling model - ATMO 2020
     path =  "./data/"
     data = np.genfromtxt(path + "./ATMO_CEQ_vega_MIRI.txt", unpack=True)
@@ -118,24 +112,21 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
                            M=mass*M_sun.value,
                            parameters=[gamma_true, rs_true, rho0_true])
     # add Gaussian noise
-    Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=N)
-    
-
-    #m_obs = np.zeros(len(mass))
-    #for i in range(len(mass)):
-    #    m_obs[i] = mass[i] + np.random.normal(loc=0, scale=(0.2*mass[i]))
-    #    if m_obs[i] > 0.053 or m_obs[i] < 0.013:
-    #        while m_obs[i] > 0.053 or m_obs[i] < 0.013:
-    #            m_obs[i] = mass[i] + np.random.normal(loc=0, scale=(0.2*mass[i]))
-
+    Tobs_wn = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=_N)
+    mass_wn = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=_N)
+    # select only those objects with masses between 14 and 55 Mjup and T > Tmin
+    pos  = np.where((mass_wn > 0.013) & (mass_wn < 0.053) & (Tobs > Tmin) & (Tobs_wn > Tmin))
+    if len(pos[0]) < N:
+        sys.exit("Less objects than required!")
     #return
-    return r_obs, Tobs, mass_wn, ages
+    return r_obs[pos][:N], Tobs_wn[pos][:N], mass_wn[pos][:N], ages[pos][:N]
 
 
 def mock_population_sens(N, rel_unc_Tobs, rel_mass, 
                          points, values,
                          f_true, gamma_true,
-                         rs_true, rho0_true=0.42):
+                         rs_true, rho0_true=0.42, 
+                         Tmin=0.):
     """
     Generate N observed exoplanets - intended to be run with sensitivity
     analysis
@@ -151,25 +142,14 @@ def mock_population_sens(N, rel_unc_Tobs, rel_mass,
     6) Estimated masses have an uncertainty of rel_mass
     """
     #np.random.seed(42)
-    _N = int(2*N)
+    _N = int(4.5*N)
     # galactocentric radius of simulated exoplanets
-    r_obs = spatial_sampling(N)
+    r_obs = spatial_sampling(_N)
     # Ages and masses of simulated BDs
-    ages = np.random.uniform(1., 10., N) # [yr] / [1-10 Gyr]
+    ages = np.random.uniform(1., 10., _N) # [yr] / [1-10 Gyr]
     mass = IMF_sampling(-0.6, _N, Mmin=6, Mmax=75) # [Mjup]
     mass = mass*M_jup.value/M_sun.value # [Msun]
-
-    # add Gaussian noise
-    mass_wn = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=_N)
-    # select only those objects with masses between 14 and 55 Mjup
-    pos  = np.where((mass_wn > 0.013) & (mass_wn < 0.053))
-
-    mass     = mass[pos][:N]
-    mass_wn  = mass_wn[pos][:N]
-
-    #print(len(ages), len(mass))
     xi = np.transpose(np.asarray([ages, mass]))
-
     Teff     = griddata(points, values, xi) # true Teff [K]
     heat_int = heat(Teff, np.ones(len(Teff))*R_jup.value)
     
@@ -178,12 +158,14 @@ def mock_population_sens(N, rel_unc_Tobs, rel_mass,
                            M=mass*M_sun.value,
                            parameters=[gamma_true, rs_true, rho0_true])
     # add Gaussian noise
-    Tobs = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=N)
-    
+    Tobs_wn = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=_N)
+    mass_wn = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=_N)
+    # select only those objects with masses between 14 and 55 Mjup and T > Tmin
+    pos  = np.where((mass_wn > 0.013) & (mass_wn < 0.053) & (Tobs > Tmin) & (Tobs_wn > Tmin))
+    if len(pos[0]) < N:
+        sys.exit("Less objects than required!")
     # estimated Teff [K]
-    xi = np.transpose(np.asarray([ages, mass_wn]))
-    #print(points, values, xi)
+    xi = np.transpose(np.asarray([ages[pos][:N], mass_wn[pos][:N]]))
     Teff = griddata(points, values, xi)
-
     #return
-    return Tobs, Teff
+    return Tobs_wn[pos][:N], Teff
