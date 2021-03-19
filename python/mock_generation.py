@@ -125,12 +125,15 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     _age   = np.linspace(1, 10, 100)
     _age_i = []; _mass = []; _teff = []
     # the first 5 masses do not have all values between 1 and 10 Gyr
-    M = np.sort(M)[5:] # further remove larger masses
+    M = np.sort(M)[5:-1] # further remove larger masses
+    #print(M)
     for m in M:
+        #print(m)
         Teff_interp = interp1d(age[m], Teff[m])
         for _a in _age:
             _age_i.append(_a)
             _mass.append(m)
+            #print(m, _a)
             _teff.append(Teff_interp(_a))
     points = np.transpose(np.asarray([_age_i, _mass]))
     values = np.asarray(_teff)
