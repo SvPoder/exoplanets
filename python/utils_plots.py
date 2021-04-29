@@ -322,6 +322,52 @@ def grid_FSE(filepath, nBDs, rel_unc, relM, ex="ex3",
     # return
     return im
 
+def grid_FSE_all(filepath, nBDs, rel_unc, relM, ex="ex3",
+             ax=False, PE="median",
+             plot_f=True, plot_g=False, ylabel=False, xlabel=False,
+             rank=100):
+    """
+    Plot FSE grid in (rs, gamma) 
+    """
+
+    norm = colors.BoundaryNorm(boundaries=np.arange(0, 1, 0.05), ncolors=256)
+
+    xi, yi, zi_1, zi_2, zi_3 = FSE_f_gamma_rs(filepath, nBDs, rel_unc, relM,
+                                              ex, rank=rank, PE=PE)
+    if ax==False:
+        fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+    if plot_f==True:
+        im = ax.pcolormesh(xi, yi, zi_1, norm=norm, cmap="magma_r")
+    elif plot_g==True:
+        im = ax.pcolormesh(xi, yi, zi_2, norm=norm, cmap="viridis_r")
+    else:
+        im = ax.pcolormesh(xi, yi, zi_3, norm=norm, cmap="cividis_r")
+    if ylabel==True:
+        ax.set_ylabel(r"$\gamma$")
+        ax.set_yticklabels(['0', '0.5', '1', '', '1.2', '', '1.4', ''])
+    else:
+        ax.set_yticklabels([])
+    if xlabel==True:
+        ax.set_xlabel(r"$r_s$ [kpc]")
+        ax.set_xticklabels(['5', '10', '20'])
+    else:
+        ax.set_xticklabels([])
+
+    text_box = AnchoredText((r"$N=10^{%i}$, $\sigma_i$=%i"
+                            %(int(np.log10(nBDs)), int(rel_unc*100))
+                            + "$\% $"),
+                            frameon=True, loc=3, pad=0.2, prop=dict(size=18))
+    plt.setp(text_box.patch, facecolor="white")
+    ax.add_artist(text_box)
+
+    ax.set_xticks([5., 10., 20.])
+    ax.set_yticks([0., 0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])
+
+    for axis in ['top','bottom','left','right']:
+        ax.spines[axis].set_linewidth(2.5)
+
+    # return
+    return im
 
 def grid_FSE_coarse(filepath, nBDs, rel_unc, relM, ex="ex3", 
              ax=False, PE="median", 

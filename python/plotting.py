@@ -30,13 +30,16 @@ from utils_plots import plot_1Dposterior
 # ----------
 # Exercise 3
 # ----------
-data_dir = "/scratch/mariacst/exoplanets/results/"
+data_dir = "/hdfs/local/mariacst/exoplanets/results/final_round/all_unc/Tmin/"
 print("1")
-plot_1Dposterior(data_dir, 100000, 0.10, 0.10, "ex3", 1., 0.5, 10.)
+plot_1Dposterior(data_dir, 100, 0.10, 0.10, "ex13", 1., 1., 10.)
+plot_1Dposterior(data_dir, 1000, 0.10, 0.10, "ex13", 1., 1., 10.)
+plot_1Dposterior(data_dir, 100000, 0.10, 0.10, "ex13", 1., 1., 10.)
 print("2")
-plot_1Dposterior(data_dir, 100000, 0.10, 0.20, "ex3", 1., 0.5, 10.)
+#plot_1Dposterior(data_dir, 1000, 0.10, 0.10, "ex4", 1., 1.5, 5.)
 print("3")
-#plot_1Dposterior(data_dir, 10000, 0.10, 0.20, "ex3", 1., 1., 20.)
+data_dir = "/hdfs/local/mariacst/exoplanets/results/final_round/Tmin/"
+#plot_1Dposterior(data_dir, 1000, 0.10, 0.10, "ex5", 1., 1., 10.)
 print("4")
 #plot_1Dposterior(data_dir, 10000, 0.10, 0.10, "ex3", 1., 1., 20.)
 

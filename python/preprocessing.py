@@ -1,7 +1,8 @@
+import sys
 import numpy as np
 import pickle
 
-def statistics(filepath, nBDs, rel_unc, relM, f, gamma, rs, rank=100, D=2):
+def statistics(filepath, ex, nBDs, rel_unc, relM, f, gamma, rs, rank=100, D=2):
     """
     Calculate mean, median, MAP & ML point estimates
 
@@ -17,11 +18,14 @@ def statistics(filepath, nBDs, rel_unc, relM, f, gamma, rs, rank=100, D=2):
     MAP    = np.zeros((D, rank))
     
     for i in range(rank):
-        #print(i)
+        print(i+1)
         # load posterior + likelihood
 
-        file_name = (filepath + ("N%irelT%.2frelM%.2f/posterior_ex4_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1frs%.1fv%i" 
-                    %(nBDs, rel_unc, relM, nBDs, rel_unc, relM, f, gamma, rs, i+1)))
+        file_name = (filepath + ("N%irelT%.2frelM%.2f/posterior_" 
+                    %(nBDs, rel_unc, relM))
+                    + ex + 
+                    ("_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1frs%.1fv%i" 
+                    %(nBDs, rel_unc, relM, f, gamma, rs, i+1)))
         samples   = pickle.load(open(file_name, "rb"))
 
         # calculate point estimates
@@ -31,8 +35,8 @@ def statistics(filepath, nBDs, rel_unc, relM, f, gamma, rs, rank=100, D=2):
             #TODO need to change # bins to see if results differ
             _n, _bins    = np.histogram(samples[:, j], bins=50)
             MAP[j][i]    = _bins[np.argmax(_n)]
-    filepath = "/home/mariacst/exoplanets/results/"
-    output = open(filepath + ("statistics_ex4_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1frs%.1f" 
+    filepath = "/home/mariacst/exoplanets/results/statistics_"
+    output = open(filepath + ex + ("_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1frs%.1f" 
                               %(nBDs, rel_unc, relM, f, gamma, rs)), 
                   "w")
     for i in range(rank):
@@ -50,14 +54,19 @@ def statistics(filepath, nBDs, rel_unc, relM, f, gamma, rs, rank=100, D=2):
 
 
 if __name__ == '__main__':
-    #filepath = "/home/mariacst/cluster/results/"
-    filepath = "/scratch/mariacst/exoplanets/results/GC/"
-    nBDs     = [1000]
-    rel_unc  = [0.3]
-    rel_M    = [0.3]
+    #filepath = "/home/mariacst/Tmin/results/"
+    filepath = "/hdfs/local/mariacst/exoplanets/results/final_round/all_unc/Tmin/"
+    ex = sys.argv[1]
+    N  = int(sys.argv[2])
+    relT = float(sys.argv[3])
+    relM = float(sys.argv[4])
+    print(N)
+    nBDs     = [N]
+    rel_unc  = [relT]
+    rel_M    = [relM]
     f        = 1.
-    rs       = [5., 10., 20.]
-    gamma    = [0.0, 0.5, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5]
+    rs       = [20.]
+    gamma    = [1.0]
 
     for N in nBDs:
         for rel in rel_unc:
@@ -66,5 +75,6 @@ if __name__ == '__main__':
                 for _rs in rs:
                     for _g in gamma:
                         print(_rs, _g)
-                        statistics(filepath, N, rel, relM, f, _g, _rs, 100, 3)
+                        statistics(filepath, ex, N, rel, relM, f, _g, _rs, 100, 3)
+
 

@@ -49,12 +49,17 @@ def gNFW_rho(Rsun, R, parameters):
     return rho
 
 def heat_DM(r, f=1, R=R_jup.value, M=M_jup.value, Rsun=8.178, 
-            parameters=[1., 20., 0.42]):
+            parameters=[1., 20., 0.42], v=None):
     """
     Heat flow due to DM capture and annihilation
     """
     vesc   = (np.sqrt(2*G*M/R)).value*1e-3 # m/s 
-    _vD    = np.sqrt(3/2.)*vc(Rsun, r, parameters) # km/s
+    if v:
+        _vD = v
+        #print(_vD, "here i am")
+    else:
+        _vD    = np.sqrt(3/2.)*vc(Rsun, r, parameters) # km/s
+        #print("rC")
     _vDM   =  np.sqrt(8./(3*np.pi))*_vD # km/s
     _rhoDM = gNFW_rho(Rsun, r, parameters) # GeV/cm3
 
@@ -65,12 +70,12 @@ def heat_DM(r, f=1, R=R_jup.value, M=M_jup.value, Rsun=8.178,
             conversion_into_w) # W
 
 def temperature_withDM(r, heat_int, f=1, R=R_jup.value, M=M_jup.value, 
-                parameters=[1., 20., 0.42], epsilon=1):
+                parameters=[1., 20., 0.42], v=None, epsilon=1):
     """
     Exoplanet temperature : internal heating + DM heating
     """
     return (np.power((heat_int + heat_DM(r, f=f, R=R, M=M, 
-                     parameters=parameters))/
+                     parameters=parameters, v=v))/
                      (4*np.pi*R**2*sigma_sb.value*epsilon), 1./4.))
 
 def temperature(heat, R, epsilon=1):

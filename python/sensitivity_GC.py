@@ -154,5 +154,5 @@ if __name__ == '__main__':
             for rM in relM:
                 print(n, rel, rM)
                 sensitivity_nBDs_relunc(filepath, n, rel, rM, points, values, 
-                                        Tmin=650., v=v, ex=ex)
+                                        Tmin=0., v=v, ex=ex)
     
