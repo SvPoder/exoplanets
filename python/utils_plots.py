@@ -1,3 +1,5 @@
+from matplotlib.lines import Line2D
+from _corner import corner
 import sys
 import pickle
 from scipy.stats import gaussian_kde
@@ -274,6 +276,42 @@ def FSE_f_gamma_rs(filepath, nBDs, rel_unc, relM, ex, rank=100, PE="median"):
     # return
     return xi, yi, zi_1, zi_2, zi_3
 
+def FSE_f_gamma_rs_each(filepath, nBDs, rel_unc, relM, relA, relR, ex, 
+                        rank=100, PE="median"):   
+    # grid points                                                               
+    f     = 1.                                                                  
+    rs    = np.array([5., 10., 20.])                                            
+    gamma = np.array([0., 0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])                     
+                                                                                
+    FSE_1 = []; FSE_2 = []; FSE_3 = []                                          
+    for _rs in rs:                                                              
+        for _g in gamma:                                                        
+            true = [f, _g, _rs]                                                 
+            data = np.genfromtxt(filepath + "statistics_" + ex +                
+                                 ("_N%i_relunc%.2f_relM%.2f_relA%.2f_relR%.2f_f%.1fgamma%.1frs%.1f"
+                                  %(nBDs, rel_unc, relM, relA, relR, f, _g, _rs)), unpack=True)
+            if PE=="median":                                                    
+                pe = np.array((data[3], data[4], data[5]))                      
+            else:                                                               
+                sys.exit("Need to implement other point estimates")             
+            FSE_1.append(np.sqrt(1/rank*np.sum(np.power(pe[0] - true[0], 2)))/true[0])
+            if np.abs(_g) < 1e-5:                                               
+                epsilon=1e-4                                                    
+            else:                                                               
+                epsilon=0.                                                      
+            FSE_2.append(np.sqrt(1/rank*np.sum(np.power(pe[1] - true[1], 2)))/(true[1]+epsilon))
+            FSE_3.append(np.sqrt(1/rank*np.sum(np.power(pe[2] - true[2], 2)))/true[2])
+                                                                                
+    xi = np.array([2.5, 7.5, 15, 25])                                           
+    yi = np.array([0., 0.25, 0.75, 1.05, 1.15, 1.25, 1.35, 1.45, 1.55])         
+    xi, yi = np.meshgrid(xi, yi, indexing="ij")                                 
+                                                                                
+    zi_1   = np.array(FSE_1).reshape(len(rs), len(gamma))                       
+    zi_2   = np.array(FSE_2).reshape(len(rs), len(gamma))                       
+    zi_3   = np.array(FSE_3).reshape(len(rs), len(gamma))                       
+    # return                                                                    
+    return xi, yi, zi_1, zi_2, zi_3 
+
 def grid_FSE(filepath, nBDs, rel_unc, relM, ex="ex3",
              ax=False, PE="median",
              plot_f=True, plot_g=False, ylabel=False, xlabel=False,
@@ -339,7 +377,7 @@ def grid_FSE_all(filepath, nBDs, rel_unc, relM, ex="ex3",
     if plot_f==True:
         im = ax.pcolormesh(xi, yi, zi_1, norm=norm, cmap="magma_r")
     elif plot_g==True:
-        im = ax.pcolormesh(xi, yi, zi_2, norm=norm, cmap="viridis_r")
+        im = ax.pcolormesh(xi, yi, zi_2, norm=norm, cmap="viridis_r", linewidth=0)
     else:
         im = ax.pcolormesh(xi, yi, zi_3, norm=norm, cmap="cividis_r")
     if ylabel==True:
@@ -368,6 +406,69 @@ def grid_FSE_all(filepath, nBDs, rel_unc, relM, ex="ex3",
 
     # return
     return im
+
+def grid_FSE_each(filepath, nBDs, rel_unc, relM, relA, relR, ex="ex17",                       
+             ax=False, PE="median",                                             
+             plot_f=True, plot_g=False, ylabel=False, xlabel=False,             
+             rank=100):                                                         
+    """                                                                         
+    Plot FSE grid in (rs, gamma)                                                
+    """                                                                         
+                                                                                
+    norm = colors.BoundaryNorm(boundaries=np.arange(0, 1, 0.05), ncolors=256)   
+                                                                                
+    xi, yi, zi_1, zi_2, zi_3 = FSE_f_gamma_rs_each(filepath, nBDs, rel_unc, relM,
+                                              relA, relR,    
+                                              ex, rank=rank, PE=PE)             
+    if ax==False:                                                               
+        fig, ax = plt.subplots(1, 1, figsize=(5, 5))                            
+    if plot_f==True:                                                            
+        im = ax.pcolormesh(xi, yi, zi_1, norm=norm, cmap="magma_r")             
+    elif plot_g==True:                                                          
+        im = ax.pcolormesh(xi, yi, zi_2, norm=norm, cmap="viridis_r", linewidth=0,)
+        im.set_edgecolor("face")
+    else:                                                                       
+        im = ax.pcolormesh(xi, yi, zi_3, norm=norm, cmap="cividis_r")           
+    if ylabel==True:                                                            
+        ax.set_ylabel(r"$\gamma$")                                              
+        ax.set_yticklabels(['0', '0.5', '1', '', '1.2', '', '1.4', ''])         
+    else:                                                                       
+        ax.set_yticklabels([])                                                  
+    if xlabel==True:                                                            
+        ax.set_xlabel(r"$r_s$ [kpc]")                                           
+        ax.set_xticklabels(['5', '10', '20'])                                   
+    else:                                                                       
+        ax.set_xticklabels([])
+
+    if np.abs(relM+relA+relR) < 1e-3:
+        variable = "T"
+        rel      = rel_unc
+    elif np.abs(relA+relR+rel_unc) < 1e-3:
+        variable = "M"
+        rel      = relM
+    elif np.abs(relR+rel_unc+relM) < 1e-3:
+        variable = "A"
+        rel      = relA
+    else:
+        variable = "R"
+        rel      = relR
+                                                                                
+    text_box = AnchoredText((r"$N=10^{%i}$, $\sigma_%s$=%i"                      
+                            %(int(np.log10(nBDs)), variable, int(rel*100))  
+                            + "$\% $"),                                         
+                            frameon=True, loc=3, pad=0.2, prop=dict(size=18))   
+    plt.setp(text_box.patch, facecolor="white")                                     
+    ax.add_artist(text_box)                                                         
+                                                                                    
+    ax.set_xticks([5., 10., 20.])                                                   
+    ax.set_yticks([0., 0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])                            
+                                                                                    
+    for axis in ['top','bottom','left','right']:                                    
+        ax.spines[axis].set_linewidth(2.5)                                          
+                                                                                    
+    # return                                                                        
+    return im
+
 
 def grid_FSE_coarse(filepath, nBDs, rel_unc, relM, ex="ex3", 
              ax=False, PE="median", 
@@ -416,6 +517,222 @@ def grid_FSE_coarse(filepath, nBDs, rel_unc, relM, ex="ex3",
 
     # return
     return im
+
+# -----------------------------------
+## Coverage
+# -----------------------------------
+def coverage_f_gamma_rs(filepath, nBDs, rel_unc, relM, ex, 
+                        rank=100, PE="median"):
+    # grid points
+    f     = 1.
+    rs    = np.array([5., 10., 20.])
+    gamma = np.array([0., 0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])
+
+    cove_1 = []; cove_2 = []; cove_3 = []
+    for _rs in rs:
+        for _g in gamma:
+            true = [f, _g, _rs]
+            data = np.genfromtxt(filepath + "statistics_" + ex + 
+                                 ("_N%i_relunc%.2f_relM%.2f_f%.1fgamma%.1frs%.1f" 
+                                  %(nBDs, rel_unc, relM, f, _g, _rs)), unpack=True)
+            if PE=="median":
+                low  = np.array((data[6], data[7], data[8]))
+                high = np.array((data[9], data[10], data[11]))
+            else:
+                sys.exit("Need to implement other point estimates")
+            one = f > low[0]
+            two = f < high[0]
+            cove_1.append(len(np.where((one==True) & (two==True))[0]))
+            one = _g > low[1]
+            two = _g < high[1]
+            cove_2.append(len(np.where((one==True) & (two==True))[0]))
+            one = _rs > low[2]
+            two = _rs < high[2]
+            cove_3.append(len(np.where((one==True) & (two==True))[0]))
+    xi = np.array([2.5, 7.5, 15, 25])
+    yi = np.array([0., 0.25, 0.75, 1.05, 1.15, 1.25, 1.35, 1.45, 1.55])
+    xi, yi = np.meshgrid(xi, yi, indexing="ij")
+
+    zi_1   = np.array(cove_1).reshape(len(rs), len(gamma))
+    zi_2   = np.array(cove_2).reshape(len(rs), len(gamma))
+    zi_3   = np.array(cove_3).reshape(len(rs), len(gamma))
+    # return
+    return xi, yi, zi_1, zi_2, zi_3
+
+
+def coverage_f_gamma_rs_each(filepath, nBDs, rel_unc, relM, relA, relR, ex,                          
+                        rank=100, PE="median"):                                     
+    # grid points                                                                   
+    f     = 1.                                                                      
+    rs    = np.array([5., 10., 20.])                                                
+    gamma = np.array([0., 0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])                         
+                                                                                    
+    cove_1 = []; cove_2 = []; cove_3 = []                                           
+    for _rs in rs:                                                                  
+        for _g in gamma:                                                            
+            true = [f, _g, _rs]                                                     
+            data = np.genfromtxt(filepath + "statistics_" + ex +                    
+                  ("_N%i_relunc%.2f_relM%.2f_relA%.2f_relR%.2f_f%.1fgamma%.1frs%.1f"
+                   %(nBDs, rel_unc, relM, relA, relR, f, _g, _rs)), unpack=True)                                 
+            if PE=="median":                                                        
+                low  = np.array((data[6], data[7], data[8]))                        
+                high = np.array((data[9], data[10], data[11]))                      
+            else:                                                                   
+                sys.exit("Need to implement other point estimates")                 
+            one = f > low[0]                                                        
+            two = f < high[0]                                                       
+            cove_1.append(len(np.where((one==True) & (two==True))[0]))              
+            one = _g > low[1]                                                       
+            two = _g < high[1]                                                      
+            cove_2.append(len(np.where((one==True) & (two==True))[0]))              
+            one = _rs > low[2]                                                      
+            two = _rs < high[2]                                                     
+            cove_3.append(len(np.where((one==True) & (two==True))[0]))              
+    xi = np.array([2.5, 7.5, 15, 25])                                               
+    yi = np.array([0., 0.25, 0.75, 1.05, 1.15, 1.25, 1.35, 1.45, 1.55])             
+    xi, yi = np.meshgrid(xi, yi, indexing="ij")                                     
+                                                                                    
+    zi_1   = np.array(cove_1).reshape(len(rs), len(gamma))                          
+    zi_2   = np.array(cove_2).reshape(len(rs), len(gamma))                          
+    zi_3   = np.array(cove_3).reshape(len(rs), len(gamma))                          
+    # return                                                                    
+    return xi, yi, zi_1, zi_2, zi_3   
+
+def grid_coverage_all(filepath, nBDs, rel_unc, relM, ex="ex3",
+             ax=False, PE="median",
+             plot_f=True, plot_g=False, ylabel=False, xlabel=False,
+             rank=100):
+    """
+    Plot coverage grid in (rs, gamma) 
+    """
+
+    norm = colors.BoundaryNorm(boundaries=np.arange(0, 100, 5), ncolors=256)
+
+    xi, yi, zi_1, zi_2, zi_3 = coverage_f_gamma_rs(filepath, nBDs, rel_unc, relM,
+                                              ex, rank=rank, PE=PE)
+    rs = [2.5, 5., 10., 20., 25.]
+    g  = [0., 0.5, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5]
+    xi_c, yi_c = np.meshgrid(rs, g)
+    cmap="RdYlGn"
+    if ax==False:
+        fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+    if plot_f==True:
+        im = ax.pcolormesh(xi, yi, zi_1, norm=norm, cmap=cmap)
+        zi_c = np.vstack((zi_1[0], zi_1, zi_1[-1]))
+        CS = ax.contour(xi_c, yi_c, zi_c.T, levels=[68], colors="k")
+        ax.clabel(CS, inline=True, fontsize=12, fmt="%i")
+    elif plot_g==True:
+        im = ax.pcolormesh(xi, yi, zi_2, norm=norm, cmap=cmap)
+        zi_c = np.vstack((zi_2[0], zi_2, zi_2[-1]))
+        CS = ax.contour(xi_c, yi_c, zi_c.T, levels=[68], colors="k")
+        ax.clabel(CS, inline=True, fontsize=12, fmt="%i")
+    else:
+        im = ax.pcolormesh(xi, yi, zi_3, norm=norm, cmap=cmap)
+        zi_c = np.vstack((zi_3[0], zi_3, zi_3[-1]))
+        CS = ax.contour(xi_c, yi_c, zi_c.T, levels=[68], colors="k")
+        ax.clabel(CS, inline=True, fontsize=12, fmt="%i")
+    if ylabel==True:
+        ax.set_ylabel(r"$\gamma$")
+        ax.set_yticklabels(['0', '0.5', '1', '', '1.2', '', '1.4', ''])
+    else:
+        ax.set_yticklabels([])
+    if xlabel==True:
+        ax.set_xlabel(r"$r_s$ [kpc]")
+        ax.set_xticklabels(['5', '10', '20'])
+    else:
+        ax.set_xticklabels([])
+
+    text_box = AnchoredText((r"$N=10^{%i}$, $\sigma_i$=%i"
+                            %(int(np.log10(nBDs)), int(rel_unc*100))
+                            + "$\% $"),
+                            frameon=True, loc=3, pad=0.2, prop=dict(size=18))
+    plt.setp(text_box.patch, facecolor="white")
+    ax.add_artist(text_box)
+
+    ax.set_xticks([5., 10., 20.])
+    ax.set_yticks([0., 0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])
+
+    for axis in ['top','bottom','left','right']:
+        ax.spines[axis].set_linewidth(2.5)
+
+    # return
+    return im
+
+def grid_coverage_each(filepath, nBDs, rel_unc, relM, relA, relR,
+             ex="ex3",                  
+             ax=False, PE="median",                                            
+             plot_f=True, plot_g=False, ylabel=False, xlabel=False,            
+             rank=100):                                                        
+    """                                                                        
+    Plot coverage grid in (rs, gamma)                                          
+    """                                                                        
+                                                                               
+    norm = colors.BoundaryNorm(boundaries=np.arange(0, 100, 5), ncolors=256)   
+                                                                                    
+    xi, yi, zi_1, zi_2, zi_3 = coverage_f_gamma_rs_each(filepath, nBDs, 
+                                            rel_unc, relM, relA, relR,
+                                            ex, rank=rank, PE=PE)                 
+    rs = [2.5, 5., 10., 20., 25.]                                                   
+    g  = [0., 0.5, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5]                                    
+    xi_c, yi_c = np.meshgrid(rs, g)                                                 
+    cmap="RdYlGn"                                                                   
+    if ax==False:                                                                   
+        fig, ax = plt.subplots(1, 1, figsize=(5, 5))                                
+    if plot_f==True:                                                                
+        im = ax.pcolormesh(xi, yi, zi_1, norm=norm, cmap=cmap)                      
+        zi_c = np.vstack((zi_1[0], zi_1, zi_1[-1]))                                 
+        CS = ax.contour(xi_c, yi_c, zi_c.T, levels=[68], colors="k")                
+        ax.clabel(CS, inline=True, fontsize=12, fmt="%i")                           
+    elif plot_g==True:                                                              
+        im = ax.pcolormesh(xi, yi, zi_2, norm=norm, cmap=cmap)                      
+        zi_c = np.vstack((zi_2[0], zi_2, zi_2[-1]))                                 
+        CS = ax.contour(xi_c, yi_c, zi_c.T, levels=[68], colors="k")                
+        ax.clabel(CS, inline=True, fontsize=12, fmt="%i")                           
+    else:                                                                           
+        im = ax.pcolormesh(xi, yi, zi_3, norm=norm, cmap=cmap)                      
+        zi_c = np.vstack((zi_3[0], zi_3, zi_3[-1]))                                 
+        CS = ax.contour(xi_c, yi_c, zi_c.T, levels=[68], colors="k")              
+        ax.clabel(CS, inline=True, fontsize=12, fmt="%i")                           
+    if ylabel==True:                                                                
+        ax.set_ylabel(r"$\gamma$")                                                  
+        ax.set_yticklabels(['0', '0.5', '1', '', '1.2', '', '1.4', ''])             
+    else:                                                                           
+        ax.set_yticklabels([])                                                      
+    if xlabel==True:                                                                
+        ax.set_xlabel(r"$r_s$ [kpc]")                                               
+        ax.set_xticklabels(['5', '10', '20'])                                       
+    else:                                                                           
+        ax.set_xticklabels([])                                                      
+                                                                               
+    if np.abs(relM+relA+relR) < 1e-3:
+        variable = "T"
+        rel      = rel_unc
+    elif np.abs(relA+relR+rel_unc) < 1e-3:
+        variable = "M"
+        rel      = relM
+    elif np.abs(relR+rel_unc+relM) < 1e-3:
+        variable = "A"
+        rel      = relA
+    else:
+        variable = "R"
+        rel      = relR
+
+    text_box = AnchoredText((r"$N=10^{%i}$, $\sigma_%s$=%i"                    
+                            %(int(np.log10(nBDs)), variable, int(rel*100))     
+                            + "$\% $"),                                        
+                            frameon=True, loc=3, pad=0.2, prop=dict(size=18)) 
+    plt.setp(text_box.patch, facecolor="white")                                 
+    ax.add_artist(text_box)                                                     
+                                                                                
+    ax.set_xticks([5., 10., 20.])                                               
+    ax.set_yticks([0., 0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])                        
+                                                                                
+    for axis in ['top','bottom','left','right']:                                
+        ax.spines[axis].set_linewidth(2.5)                                      
+                                                                                
+    # return                                                                    
+    return im
+
 
 
 # -----------------------------------
@@ -1153,3 +1470,75 @@ def plot_1Dposterior_ex(f, gamma, rs, filepath, ex, color="k"):
                 %(f, gamma, int(rs))))
     # return
     return
+
+
+def plot_corner(samples, nBDs, relT, relM, f, gamma, rs, i=1, smooth=1.):
+
+    fig, axes = corner(samples, levels=(1-np.exp(-0.5), 1-np.exp(-2)), plot_datapoints=False, 
+                       plot_density=False, fill_contours=False, smooth=smooth, color="green",
+                       range=[(0., 1.01), (-0.01, 2.5), (0., 40.)])
+    # plot KDE smoothed version of distributions
+    for axidx, samps in zip([0, 4, 8], samples.T):
+        kde   = gaussian_kde(samps)
+        xvals = fig.axes[axidx].get_xlim()
+        xvals = np.linspace(xvals[0], xvals[1], 100)
+        fig.axes[axidx].plot(xvals, kde(xvals)/np.max(kde(xvals)), color="green", lw=2.5)    
+    
+    axes[0, 0].axvline(1., color="r", ls="--", lw=2.5)
+    axes[1, 1].axvline(gamma, color="r", ls="--", lw=2.5)
+    axes[2, 2].axvline(rs, color="r", ls="--", lw=2.5)
+    axes[1, 0].scatter(f, gamma, marker="x", color="red", s=60)
+    axes[2, 0].scatter(f, rs, marker="x", color="red", s=60)
+    axes[2, 1].scatter(gamma, rs, marker="x", color="red", s=60)
+        
+    axes[1, 0].set_ylabel(r"$\gamma$")
+    axes[2, 0].set_xlabel(r"$f$")
+    axes[2, 0].set_ylabel(r"$r_s$ [kpc]")
+    axes[2, 1].set_xlabel(r"$\gamma$")
+    axes[2, 2].set_xlabel(r"$r_s$ [kpc]")
+    
+    colors = ['green']
+    lines = [Line2D([0], [0], color=c, linewidth=2.5, linestyle='-') for c in colors]
+    labels = ['N %i, relT=%0.1f, relM=%.1f' %(nBDs, relT, relM)]
+    axes[0, 2].legend(lines, labels, fontsize=16)
+    
+    fig.savefig(("../../Figs/corner_ex15_N%irelT%.2frelM%.2f_g%.1frs%.1f_%i.png" %(nBDs, relT, relM, gamma, rs, i+1)), 
+                bbox_inches="tight")
+
+
+
+def plot_corner_each(samples, ex, nBDs, relT, relM, relA, relR, f, gamma, rs, 
+                     i=1, smooth=1.):           
+                                                                                    
+    fig, axes = corner(samples, levels=(1-np.exp(-0.5), 1-np.exp(-2)), plot_datapoints=False, 
+                       plot_density=False, fill_contours=False, smooth=smooth, color="green",
+                       range=[(0., 1.01), (-0.01, 2.5), (0., 40.)])                 
+    # plot KDE smoothed version of distributions                                    
+    for axidx, samps in zip([0, 4, 8], samples.T):                                  
+        kde   = gaussian_kde(samps)                                                 
+        xvals = fig.axes[axidx].get_xlim()                                          
+        xvals = np.linspace(xvals[0], xvals[1], 100)                                
+        fig.axes[axidx].plot(xvals, kde(xvals)/np.max(kde(xvals)), color="green", lw=2.5)    
+                                                                                    
+    axes[0, 0].axvline(1., color="r", ls="--", lw=2.5)                              
+    axes[1, 1].axvline(gamma, color="r", ls="--", lw=2.5)                           
+    axes[2, 2].axvline(rs, color="r", ls="--", lw=2.5)                              
+    axes[1, 0].scatter(f, gamma, marker="x", color="red", s=60)                     
+    axes[2, 0].scatter(f, rs, marker="x", color="red", s=60)                        
+    axes[2, 1].scatter(gamma, rs, marker="x", color="red", s=60)                    
+                                                                                    
+    axes[1, 0].set_ylabel(r"$\gamma$")                                              
+    axes[2, 0].set_xlabel(r"$f$")                                                   
+    axes[2, 0].set_ylabel(r"$r_s$ [kpc]")                                           
+    axes[2, 1].set_xlabel(r"$\gamma$")                                              
+    axes[2, 2].set_xlabel(r"$r_s$ [kpc]")                                           
+                                                                                    
+    colors = ['green']                                                          
+    lines = [Line2D([0], [0], color=c, linewidth=2.5, linestyle='-') for c in colors]
+    labels = ['N %i, relT=%0.1f, relM=%.1f' %(nBDs, relT, relM)]                
+    axes[0, 2].legend(lines, labels, fontsize=16)                               
+                                                                                
+    fig.savefig(("../../Figs/corner_" + ex + 
+                 "_N%irelT%.2frelM%.2frelA%.2frelR%.2f_g%.1frs%.1f_%i.png" 
+                 %(nBDs, relT, relM, relA, relR, gamma, rs, i+1)),
+                bbox_inches="tight") 
