@@ -119,7 +119,7 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     if len(pos[0]) < N:
         sys.exit("Less objects than required!")
     #return
-    return (r_obs[pos][:N], Tobs[pos][:N], Tobs_wn[pos][:N], mass_wn[pos][:N], ages[pos][:N])
+    return (r_obs[pos][:N], Tobs_wn[pos][:N], mass_wn[pos][:N], ages[pos][:N])
 
 
 def mock_population_all(N, relT, relM, relRobs, relA,
@@ -176,7 +176,7 @@ def mock_population_all(N, relT, relM, relRobs, relA,
     if len(pos[0]) < N:
         sys.exit("Less objects than required!")
     #return
-    return (robs_wn[pos][:N], Tobs[pos][:N], Tobs_wn[pos][:N], 
+    return (robs_wn[pos][:N], Tobs_wn[pos][:N],
             mass_wn[pos][:N], ages_wn[pos][:N])
 
 
