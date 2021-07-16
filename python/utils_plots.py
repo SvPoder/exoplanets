@@ -221,8 +221,10 @@ def FSE_f_gamma_rs_coarse(filepath, nBDs, rel_unc, relM, ex, rank=100, PE="media
                                   %(nBDs, rel_unc, relM, f, _g, _rs)), unpack=True)
             if PE=="median":
                 pe = np.array((data[3], data[4], data[5]))
+            elif PE=="ML":
+                pe = np.array((data[15], data[16], data[17]))
             else:
-                sys.exit("Need to implement other point estimates")
+                sys.exit("Point estimate not implemented!")
             FSE_1.append(np.sqrt(1/rank*np.sum(np.power(pe[0] - true[0], 2)))/true[0])
             if np.abs(_g) < 1e-5:
                 epsilon=1e-4
@@ -256,8 +258,10 @@ def FSE_f_gamma_rs(filepath, nBDs, rel_unc, relM, ex, rank=100, PE="median"):
                                   %(nBDs, rel_unc, relM, f, _g, _rs)), unpack=True)
             if PE=="median":
                 pe = np.array((data[3], data[4], data[5]))
+            elif PE=="ML":
+                pe = np.array((data[15], data[16], data[17]))
             else:
-                sys.exit("Need to implement other point estimates")
+                sys.exit("Point estimate not implemented!")
             FSE_1.append(np.sqrt(1/rank*np.sum(np.power(pe[0] - true[0], 2)))/true[0])
             if np.abs(_g) < 1e-5:
                 epsilon=1e-4
@@ -290,10 +294,12 @@ def FSE_f_gamma_rs_each(filepath, nBDs, rel_unc, relM, relA, relR, ex,
             data = np.genfromtxt(filepath + "statistics_" + ex +                
                                  ("_N%i_relunc%.2f_relM%.2f_relA%.2f_relR%.2f_f%.1fgamma%.1frs%.1f"
                                   %(nBDs, rel_unc, relM, relA, relR, f, _g, _rs)), unpack=True)
-            if PE=="median":                                                    
-                pe = np.array((data[3], data[4], data[5]))                      
-            else:                                                               
-                sys.exit("Need to implement other point estimates")             
+            if PE=="median":
+                pe = np.array((data[3], data[4], data[5]))
+            elif PE=="ML":
+                pe = np.array((data[15], data[16], data[17]))
+            else:
+                sys.exit("Point estimate not implemented!")
             FSE_1.append(np.sqrt(1/rank*np.sum(np.power(pe[0] - true[0], 2)))/true[0])
             if np.abs(_g) < 1e-5:                                               
                 epsilon=1e-4                                                    
