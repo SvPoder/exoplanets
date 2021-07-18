@@ -119,7 +119,8 @@ def mock_population(N, rel_unc_Tobs, rel_mass, f_true, gamma_true,
     if len(pos[0]) < N:
         sys.exit("Less objects than required!")
     #return
-    return (r_obs[pos][:N], Tobs_wn[pos][:N], mass_wn[pos][:N], ages[pos][:N])
+    return (r_obs[pos][:N], Tobs_wn[pos][:N], rel_unc_Tobs*Tobs[pos][:N],
+            mass_wn[pos][:N], ages[pos][:N])
 
 
 def mock_population_all(N, relT, relM, relRobs, relA,
@@ -176,54 +177,6 @@ def mock_population_all(N, relT, relM, relRobs, relA,
     if len(pos[0]) < N:
         sys.exit("Less objects than required!")
     #return
-    return (robs_wn[pos][:N], Tobs_wn[pos][:N],
+    return (robs_wn[pos][:N], Tobs_wn[pos][:N], relT*Tobs[pos][:N],
             mass_wn[pos][:N], ages_wn[pos][:N])
 
-
-def mock_population_sens(N, rel_unc_Tobs, rel_mass, 
-                         points, values,
-                         f_true, gamma_true,
-                         rs_true, rho0_true=0.42, 
-                         Tmin=0.):
-    """
-    Generate N observed exoplanets - intended to be run with sensitivity
-    analysis
-
-    Assumptions
-    -----------
-    1) N observed exoplanets distributed according to E2 bulge + BR disc
-    2) (All) exoplanets radius = Rjup
-    3) BD evolution model taken from ATMO 2020
-    4) BDs have masses chosen between 14-55 Mjup assuming power-law IMF and
-       unifrom age distribution between 1-10 Gyr
-    5) Tobs has relative uncertainty rel_unc_Tobs
-    6) Estimated masses have an uncertainty of rel_mass
-    """
-    #np.random.seed(42)
-    _N = int(5.5*N)
-    # galactocentric radius of simulated exoplanets
-    r_obs = spatial_sampling(_N)
-    # Ages and masses of simulated BDs
-    ages = np.random.uniform(1., 10., _N) # [yr] / [1-10 Gyr]
-    mass = IMF_sampling(-0.6, _N, Mmin=6, Mmax=75) # [Mjup]
-    mass = mass*M_jup.value/M_sun.value # [Msun]
-    xi = np.transpose(np.asarray([ages, mass]))
-    Teff     = griddata(points, values, xi) # true Teff [K]
-    heat_int = heat(Teff, np.ones(len(Teff))*R_jup.value)
-    
-    # Observed velocity (internal heating + DM)
-    Tobs = temperature_withDM(r_obs, heat_int, f=f_true, R=R_jup.value,
-                           M=mass*M_sun.value,
-                           parameters=[gamma_true, rs_true, rho0_true])
-    # add Gaussian noise
-    Tobs_wn = Tobs + np.random.normal(loc=0, scale=(rel_unc_Tobs*Tobs), size=_N)
-    mass_wn = mass + np.random.normal(loc=0, scale=(rel_mass*mass), size=_N)
-    # select only those objects with masses between 14 and 55 Mjup and T > Tmin
-    pos  = np.where((mass_wn > 0.013) & (mass_wn < 0.053) & (Tobs > Tmin) & (Tobs_wn > Tmin))
-    if len(pos[0]) < N:
-        sys.exit("Less objects than required!")
-    # estimated Teff [K]
-    xi = np.transpose(np.asarray([ages[pos][:N], mass_wn[pos][:N]]))
-    Teff = griddata(points, values, xi)
-    #return
-    return Tobs_wn[pos][:N], Teff
