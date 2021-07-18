@@ -43,7 +43,6 @@ def residual(p):#, robs, Tobs, rel_unc_Tobs, heat_int, mass):
                                 parameters=[gamma, rs, rho0], v=v)
     return -0.5*np.sum(((Tmodel-Tobs)/(relTobs*Tobs))**2.)
 
-
 def lnprob(p):#, robs, Tobs, rel_unc_Tobs, heat_int, mass):
     lp = lnprior(p)
     if not np.isfinite(lp):
@@ -52,9 +51,8 @@ def lnprob(p):#, robs, Tobs, rel_unc_Tobs, heat_int, mass):
     # Return
     return lp + residual(p)#, robs, Tobs, rel_unc_Tobs, heat_int, mass)
 # ------------------------------------------------------------------------
-
 # Load theoretical cooling model
-path = "./data/"
+path = "/home/mariacst/exoplanets/running/data/"
 data = np.genfromtxt(path + "./ATMO_CEQ_vega_MIRI.txt", unpack=True)
 points = np.transpose(data[0:2, :])
 values = data[2]
