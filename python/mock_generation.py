@@ -145,7 +145,7 @@ def mock_population_all(N, relT, relM, relRobs, relA,
     # galactocentric radius of simulated exoplanets
     r_obs = spatial_sampling(_N)
     # Age
-    ages = np.random.uniform(1., 10., _N) # [yr] / [1-10 Gyr]
+    ages = np.random.uniform(9., 10., _N) # [yr] / [1-10 Gyr]
     # Mass
     mass = IMF_sampling(-0.6, _N, Mmin=6, Mmax=75) # [Mjup]
     mass = mass*M_jup.value/M_sun.value # [Msun]
