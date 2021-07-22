@@ -53,7 +53,7 @@ def heat_DM(r, f=1, R=R_jup.value, M=M_jup.value, Rsun=8.178,
     """
     Heat flow due to DM capture and annihilation
     """
-    vesc   = (np.sqrt(2*G*M/R)).value*1e-3 # m/s 
+    vesc   = (np.sqrt(2*G*M/R)).value*1e-3 # km/s 
     if v:
         _vD = v
         #print(_vD, "here i am")
