@@ -177,6 +177,8 @@ def mock_population_all(N, relT, relM, relRobs, relA,
     if len(pos[0]) < N:
         sys.exit("Less objects than required!")
     #return
-    return (robs_wn[pos][:N], Tobs_wn[pos][:N], relT*Tobs[pos][:N],
-            mass_wn[pos][:N], ages_wn[pos][:N])
+    return (robs_wn[pos][:N], relRobs*r_obs[pos][:N],
+            Tobs_wn[pos][:N], relT*Tobs[pos][:N],
+            mass_wn[pos][:N], relM*mass[pos][:N],
+            ages_wn[pos][:N]), relA*ages[pos][:N])
 
