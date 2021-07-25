@@ -4,68 +4,77 @@ from scipy.misc import derivative
 from astropy.constants import R_jup, M_jup, G, sigma_sb
 from utils import gNFW_rho, vc
 
+# Constant parameters & conversions ========================================== 
 _sigma_sb = sigma_sb.value
 _G        = G.value
+conversion_into_K_vs_kg = 1.60217e-7
+conversion_into_w       = 0.16021766
+conv_Msun_to_kg         = 1.98841e+30 # [kg/Msun]
+# ============================================================================
 
-def derivativeTDM_wrt_M(r, f=1, R=R_jup.value, M=M_jup.value, Rsun=8.178,
-                        parameters=[1., 20., 0.42], v=None, epsilon=1):
+def derivativeTDM_wrt_M(r, params, M, v=None, R=R_jup.value, Rsun=8.178,
+                        epsilon=1):
     """
     Return (analytical) derivative of DM temperature wrt mass @ 
-    (f, gamma, rs, rho0, r, M, R) [K/kg]
+    (f, gamma, rs, rho0, r, M, R) [K/Msun]
+
+    Input
+    -----
+        r      : Galactocentric distance [kpc]
+        params : DM parameters [f, gamma, rs]
+        M      : exoplanet mass [Msun]
     """
     # escape velocity
-    vesc   = np.sqrt(2*_G*M/R)*1e-3 # km/s
+    vesc   = np.sqrt(2*_G*M*conv_Msun_to_kg/R)*1e-3 # km/s
     if v:
         _vD = v
         #print(_vD, "here i am")
     else:
-        _vD    = np.sqrt(3/2.)*vc(Rsun, r, parameters) # km/s
+        _vD    = np.sqrt(3/2.)*vc(Rsun, r, params) # km/s
         
     _vDM   =  np.sqrt(8./(3*np.pi))*_vD # km/s
-    _rhoDM = gNFW_rho(Rsun, r, parameters) # GeV/cm3
+    _rhoDM = gNFW_rho(Rsun, r, params) # GeV/cm3
 
-    conversion_into_w = 0.16021766 
-    
     # DM temperature^-3 [1/K^3]
-    T_DM3 = np.power((f*_rhoDM*_vDM*(1+3./2.*np.power(vesc/_vD, 2))*
+    T_DM3 = np.power((params[0]*_rhoDM*_vDM*(1+3./2.*np.power(vesc/_vD, 2))*
                      conversion_into_w)/(4*_sigma_sb*epsilon), -3./4.)
-    
-    #print(T_DM3)
-    
-    conversion_into_K_vs_kg = 1.60217e-7
     # return 
-    return (T_DM3*3./16.*np.sqrt(8./3./np.pi)*f/_sigma_sb/epsilon*_rhoDM*_G/_vD/R*
-            conversion_into_K_vs_kg
+    return (T_DM3*3./16.*np.sqrt(8./3./np.pi)*params[0]/_sigma_sb/
+            epsilon*_rhoDM*_G/_vD/R*
+            conversion_into_K_vs_kg*conv_Msun_to_kg
            )
 
 
-def derivativeTDM_wrt_r(r, f=1, R=R_jup.value, M=M_jup.value, Rsun=8.178,
-                        parameters=[1., 20., 0.42], v=None, epsilon=1):
+def derivativeTDM_wrt_r(r, params, M, v=None, R=R_jup.value, Rsun=8.178,
+                        epsilon=1):
     """
     Return (analytical) derivative of DM temperature wrt r @ 
     (f, gamma, rs, rho0, r, M, R) [K/kpc]
     
     Assumption: DM velocity and velocity dispersion constant!
+    
+    Input
+    -----
+        r      : Galactocentric distance [kpc]
+        params : DM parameters [f, gamma, rs]
+        M      : exoplanet mass [Msun]
     """
     # escape velocity
-    vesc   = np.sqrt(2*_G*M/R)*1e-3 # km/s
+    vesc   = np.sqrt(2*_G*M*conv_Msun_to_kg/R)*1e-3 # km/s
     if v:
         _vD = v
         #print(_vD, "here i am")
     else:
-        _vD    = np.sqrt(3/2.)*vc(Rsun, r, parameters) # km/s
+        _vD    = np.sqrt(3/2.)*vc(Rsun, r, params) # km/s
         
     _vDM   =  np.sqrt(8./(3*np.pi))*_vD # km/s
-    _rhoDM = gNFW_rho(Rsun, r, parameters) # GeV/cm3
+    _rhoDM = gNFW_rho(Rsun, r, params) # GeV/cm3
 
-    conversion_into_w = 0.16021766 
-    
     # DM temperature [K]
-    T_DM = np.power((f*_rhoDM*_vDM*(1+3./2.*np.power(vesc/_vD, 2))*
+    T_DM = np.power((params[0]*_rhoDM*_vDM*(1+3./2.*np.power(vesc/_vD, 2))*
                      conversion_into_w)/(4*_sigma_sb*epsilon), 1./4.)
     
-    return(0.25*T_DM*(-parameters[0]/r - (3-parameters[0])/(parameters[1] + r))
-           )
+    return(0.25*T_DM*(-params[1]/r - (3-params[1])/(params[2] + r)))
 
 def derivativeTint_wrt_A(M, A, points, values, size=7000, h=0.001):
     """
@@ -85,7 +94,7 @@ def derivativeTint_wrt_A(M, A, points, values, size=7000, h=0.001):
 
 def derivativeTint_wrt_M(M, A, points, values, size=7000, h=0.001):
     """
-    Return (numerical) derivative of intrinsic temperature wrt Age [K/Gyr]
+    Return (numerical) derivative of intrinsic temperature wrt mass [K/Msun]
     
     Input
     -----
@@ -98,3 +107,19 @@ def derivativeTint_wrt_M(M, A, points, values, size=7000, h=0.001):
     Teff   = griddata(points, values, xi)
     # return
     return derivative(interp1d(mass, Teff), M, dx=h)
+
+def derivativeT_wrt_M(r, M, A, points, values, params, 
+                      size=7000, h=0.001, v=None,
+                      R=R_jup.value, Rsun=8.178, epsilon=1):
+    """
+    Return derivatite of (intrinsic + DM) temperature wrt mass [K/Msun]
+    
+    Input
+    -----
+        r : Galactocentric distance [kpc]
+        M : mass [Msun]
+        A : age [Gyr]
+    """
+    return (derivativeTint_wrt_M(M, A, points, values, size=size, h=h) + 
+            derivativeTDM_wrt_M(r, params, M, v=v, R=R, Rsun=Rsun, 
+                                epsilon=epsilon))
