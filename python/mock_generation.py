@@ -157,12 +157,12 @@ def mock_population_all(N, relT, relM, relRobs, relA,
     xi = np.transpose(np.asarray([ages, mass]))
 
     Teff     = griddata(points, values, xi)
-    heat_int = heat(Teff, np.ones(len(Teff))*R_jup.value)
+    #heat_int = heat(Teff, np.ones(len(Teff))*R_jup.value)
     #print(len(Teff), len(r_obs), len(heat_int), len(mass))
     # Observed velocity (internal heating + DM)
-    Tobs = temperature_withDM(r_obs, heat_int, f=f_true, R=R_jup.value,
+    Tobs = temperature_withDM(r_obs, Teff, R=R_jup.value,
                            M=mass*M_sun.value,
-                           parameters=[gamma_true, rs_true, rho0_true], v=v)
+                           params=[gamma_true, rs_true, rho0_true], v=v)
     # add Gaussian noise
     Tobs_wn = Tobs + np.random.normal(loc=0, scale=(relT*Tobs), size=_N)
     mass_wn = mass + np.random.normal(loc=0, scale=(relM*mass), size=_N)

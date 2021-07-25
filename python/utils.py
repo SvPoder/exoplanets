@@ -5,6 +5,14 @@ from scipy.interpolate import interp1d
 import astropy.units as u
 
 
+# Constant parameters & conversions ==========================================  
+_sigma_sb = sigma_sb.value                                                      
+_G        = G.value                                                             
+conversion_into_K_vs_kg = 1.60217e-7                                            
+conversion_into_w       = 0.16021766                                            
+conv_Msun_to_kg         = 1.98841e+30 # [kg/Msun]                               
+# ============================================================================ 
+
 def vc(Rsun, Rint, parameters):
     data = np.genfromtxt("../data/rc_e2bulge_R08.178_J_corr.dat", unpack=True)
     r = data[0]
@@ -53,7 +61,7 @@ def heat_DM(r, f=1, R=R_jup.value, M=M_jup.value, Rsun=8.178,
     """
     Heat flow due to DM capture and annihilation
     """
-    vesc   = (np.sqrt(2*G*M/R)).value*1e-3 # km/s 
+    vesc   = (np.sqrt(2*_G*M/R))*1e-3 # km/s 
     if v:
         _vD = v
         #print(_vD, "here i am")
@@ -63,20 +71,36 @@ def heat_DM(r, f=1, R=R_jup.value, M=M_jup.value, Rsun=8.178,
     _vDM   =  np.sqrt(8./(3*np.pi))*_vD # km/s
     _rhoDM = gNFW_rho(Rsun, r, parameters) # GeV/cm3
 
-    conversion_into_w = 0.16021766 
-
     # return
     return (f*np.pi*R**2*_rhoDM*_vDM*(1+3./2.*np.power(vesc/_vD, 2))*
             conversion_into_w) # W
 
-def temperature_withDM(r, heat_int, f=1, R=R_jup.value, M=M_jup.value, 
-                parameters=[1., 20., 0.42], v=None, epsilon=1):
+def T_DM(r, R=R_jup.value, M=M_jup.value, Rsun=8.178, params=[1., 20., 0.42], 
+         v=None, epsilon=1.):                                       
+    """                                                                        
+    DM temperature                                                             
+    """   
+    # escape velocity
+    vesc   = np.sqrt(2*_G*M/R)*1e-3 # km/s                      
+    if v:                                                                      
+        _vD = v                                                                
+        #print(_vD, "here i am")                                               
+    else:                                                                      
+        _vD    = np.sqrt(3/2.)*vc(Rsun, r, params) # km/s                      
+                                                                               
+    _vDM   =  np.sqrt(8./(3*np.pi))*_vD # km/s                                 
+    _rhoDM = gNFW_rho(Rsun, r, params) # GeV/cm3                               
+    # return                                                                   
+    return np.power((params[0]*_rhoDM*_vDM*(1+3./2.*np.power(vesc/_vD, 2))*    
+                    conversion_into_w)/(4*_sigma_sb*epsilon), 1./4.)
+
+def temperature_withDM(r, Tint, R=R_jup.value, M=M_jup.value, 
+                       params=[1., 20., 0.42], v=None, Rsun=8.178, epsilon=1):
     """
     Exoplanet temperature : internal heating + DM heating
     """
-    return (np.power((heat_int + heat_DM(r, f=f, R=R, M=M, 
-                     parameters=parameters, v=v))/
-                     (4*np.pi*R**2*sigma_sb.value*epsilon), 1./4.))
+    return (np.power(np.power(Tint, 4) + 
+                     np.power(T_DM(r, R=R, M=M, Rsun=Rsun, params=params, v=v), 4), 0.25))
 
 def temperature(heat, R, epsilon=1):
     return np.power(heat/(4*np.pi*R**2*sigma_sb*epsilon), 0.25)
