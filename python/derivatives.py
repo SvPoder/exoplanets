@@ -108,18 +108,3 @@ def derivativeTint_wrt_M(M, A, points, values, size=7000, h=0.001):
     # return
     return derivative(interp1d(mass, Teff), M, dx=h)
 
-def derivativeT_wrt_M(r, M, A, points, values, params, 
-                      size=7000, h=0.001, v=None,
-                      R=R_jup.value, Rsun=8.178, epsilon=1):
-    """
-    Return derivatite of (intrinsic + DM) temperature wrt mass [K/Msun]
-    
-    Input
-    -----
-        r : Galactocentric distance [kpc]
-        M : mass [Msun]
-        A : age [Gyr]
-    """
-    return (derivativeTint_wrt_M(M, A, points, values, size=size, h=h) + 
-            derivativeTDM_wrt_M(r, params, M, v=v, R=R, Rsun=Rsun, 
-                                epsilon=epsilon))
