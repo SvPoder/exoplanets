@@ -75,8 +75,8 @@ def heat_DM(r, f=1, R=R_jup.value, M=M_jup.value, Rsun=8.178,
     return (f*np.pi*R**2*_rhoDM*_vDM*(1+3./2.*np.power(vesc/_vD, 2))*
             conversion_into_w) # W
 
-def T_DM(r, R=R_jup.value, M=M_jup.value, Rsun=8.178, params=[1., 20., 0.42], 
-         v=None, epsilon=1.):                                       
+def T_DM(r, R=R_jup.value, M=M_jup.value, Rsun=8.178, f=1., 
+         params=[1., 20., 0.42], v=None, epsilon=1.):                                       
     """                                                                        
     DM temperature                                                             
     """   
@@ -84,23 +84,24 @@ def T_DM(r, R=R_jup.value, M=M_jup.value, Rsun=8.178, params=[1., 20., 0.42],
     vesc   = np.sqrt(2*_G*M/R)*1e-3 # km/s                      
     if v:                                                                      
         _vD = v                                                                
-        #print(_vD, "here i am")                                               
     else:                                                                      
         _vD    = np.sqrt(3/2.)*vc(Rsun, r, params) # km/s                      
                                                                                
     _vDM   =  np.sqrt(8./(3*np.pi))*_vD # km/s                                 
     _rhoDM = gNFW_rho(Rsun, r, params) # GeV/cm3                               
     # return                                                                   
-    return np.power((params[0]*_rhoDM*_vDM*(1+3./2.*np.power(vesc/_vD, 2))*    
+    return np.power((f*_rhoDM*_vDM*(1+3./2.*np.power(vesc/_vD, 2))*    
                     conversion_into_w)/(4*_sigma_sb*epsilon), 1./4.)
 
 def temperature_withDM(r, Tint, R=R_jup.value, M=M_jup.value, 
-                       params=[1., 20., 0.42], v=None, Rsun=8.178, epsilon=1):
+                       f=1., p=[1., 20., 0.42], v=None, Rsun=8.178, epsilon=1):
     """
     Exoplanet temperature : internal heating + DM heating
     """
     return (np.power(np.power(Tint, 4) + 
-                     np.power(T_DM(r, R=R, M=M, Rsun=Rsun, params=params, v=v), 4), 0.25))
+                     np.power(T_DM(r, R=R, M=M, Rsun=Rsun, f=f, params=p, v=v, 
+                                   epsilon=epsilon), 4)
+                     , 0.25))
 
 def temperature(heat, R, epsilon=1):
     return np.power(heat/(4*np.pi*R**2*sigma_sb*epsilon), 0.25)

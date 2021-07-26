@@ -4,6 +4,9 @@
 # dwarfs (BDs)
 #
 # ===========================================================================
+import utils
+import imp
+imp.reload(utils)
 import numpy as np
 from scipy.interpolate import griddata
 from astropy.constants import L_sun, R_jup, M_jup, M_sun
@@ -162,7 +165,8 @@ def mock_population_all(N, relT, relM, relRobs, relA,
     # Observed velocity (internal heating + DM)
     Tobs = temperature_withDM(r_obs, Teff, R=R_jup.value,
                            M=mass*M_sun.value,
-                           params=[gamma_true, rs_true, rho0_true], v=v)
+                           f=f_true, p=[gamma_true, rs_true, rho0_true], 
+                           v=v)
     # add Gaussian noise
     Tobs_wn = Tobs + np.random.normal(loc=0, scale=(relT*Tobs), size=_N)
     mass_wn = mass + np.random.normal(loc=0, scale=(relM*mass), size=_N)

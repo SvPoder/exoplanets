@@ -12,7 +12,7 @@ conversion_into_w       = 0.16021766
 conv_Msun_to_kg         = 1.98841e+30 # [kg/Msun]
 # ============================================================================
 
-def derivativeTDM_wrt_M(r, params, M, v=None, R=R_jup.value, Rsun=8.178,
+def derivativeTDM_wrt_M(r, f, params, M, v=None, R=R_jup.value, Rsun=8.178,
                         epsilon=1):
     """
     Return (analytical) derivative of DM temperature wrt mass @ 
@@ -36,16 +36,16 @@ def derivativeTDM_wrt_M(r, params, M, v=None, R=R_jup.value, Rsun=8.178,
     _rhoDM = gNFW_rho(Rsun, r, params) # GeV/cm3
 
     # DM temperature^-3 [1/K^3]
-    T_DM3 = np.power((params[0]*_rhoDM*_vDM*(1+3./2.*np.power(vesc/_vD, 2))*
+    T_DM3 = np.power((f*_rhoDM*_vDM*(1+3./2.*np.power(vesc/_vD, 2))*
                      conversion_into_w)/(4*_sigma_sb*epsilon), -3./4.)
     # return 
-    return (T_DM3*3./16.*np.sqrt(8./3./np.pi)*params[0]/_sigma_sb/
+    return (T_DM3*3./16.*np.sqrt(8./3./np.pi)*f/_sigma_sb/
             epsilon*_rhoDM*_G/_vD/R*
             conversion_into_K_vs_kg*conv_Msun_to_kg
            )
 
 
-def derivativeTDM_wrt_r(r, params, M, v=None, R=R_jup.value, Rsun=8.178,
+def derivativeTDM_wrt_r(r, f, params, M, v=None, R=R_jup.value, Rsun=8.178,
                         epsilon=1):
     """
     Return (analytical) derivative of DM temperature wrt r @ 
@@ -71,10 +71,10 @@ def derivativeTDM_wrt_r(r, params, M, v=None, R=R_jup.value, Rsun=8.178,
     _rhoDM = gNFW_rho(Rsun, r, params) # GeV/cm3
 
     # DM temperature [K]
-    T_DM = np.power((params[0]*_rhoDM*_vDM*(1+3./2.*np.power(vesc/_vD, 2))*
+    T_DM = np.power((f*_rhoDM*_vDM*(1+3./2.*np.power(vesc/_vD, 2))*
                      conversion_into_w)/(4*_sigma_sb*epsilon), 1./4.)
     
-    return(0.25*T_DM*(-params[1]/r - (3-params[1])/(params[2] + r)))
+    return(0.25*T_DM*(-params[0]/r - (3-params[0])/(params[1] + r)))
 
 def derivativeTint_wrt_A(M, A, points, values, size=7000, h=0.001):
     """
@@ -108,3 +108,23 @@ def derivativeTint_wrt_M(M, A, points, values, size=7000, h=0.001):
     # return
     return derivative(interp1d(mass, Teff), M, dx=h)
 
+
+def derivativeT_wrt_M(r, M, A, Tint, TDM, points, values, f, params,
+                      size=7000, h=0.001, v=None,                              
+                      R=R_jup.value, Rsun=8.178, epsilon=1):                   
+    """                                                                        
+    Return derivatite of (intrinsic + DM) temperature wrt mass [K/Msun]        
+                                                                               
+    Input                                                                      
+    -----                                                                      
+        r : Galactocentric distance [kpc]                                      
+        M : mass [Msun]                                                        
+        A : age [Gyr]                                                          
+    """   
+    Ttot = np.power(TDM**4 + Tint**4, 0.25)
+    # return 
+    return ((Tint/Ttot)**3*derivativeTint_wrt_M(M, A, points, values, size=size, 
+                                                h=h) +
+            (TDM/Ttot)**3*derivativeTDM_wrt_M(r, f, params, M, v=v, R=R, Rsun=Rsun,
+                                              epsilon=epsilon)
+           )
