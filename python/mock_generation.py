@@ -186,3 +186,27 @@ def mock_population_all(N, relT, relM, relRobs, relA,
             mass_wn[pos][:N], relM*mass[pos][:N],
             ages_wn[pos][:N], relA*ages[pos][:N])
 
+def mock_population_all_fixed(N, Tobs, mass, r_obs, ages, sigma, Tmin=0.):                                          
+    """                                                                            
+    Generate N observed exoplanets                                                 
+                                                                                   
+    """                                                                            
+    _N = len(Tobs)
+    # add Gaussian noise                                                           
+    Tobs_wn = Tobs + np.random.normal(loc=0, scale=(sigma*Tobs), size=_N)           
+    mass_wn = mass + np.random.normal(loc=0, scale=(sigma*mass), size=_N)           
+    robs_wn = r_obs + np.random.normal(loc=0, scale=(sigma*r_obs), size=_N)   
+    ages_wn = ages + np.random.normal(loc=0, scale=(sigma*ages), size=_N)           
+    # select only those objects with masses between 14 and 55 Mjup and T > Tmin 
+    pos  = np.where((mass_wn > 0.015) & (mass_wn < 0.051) & # 16 - 53 Mjup!        
+                    (Tobs > Tmin) & (Tobs_wn > Tmin) &                             
+                    (robs_wn > 0.1) & (robs_wn < 1.) &                             
+                    (ages_wn > 1.002) & (ages_wn < 9.998))                         
+    #print("Tmin = ", Tmin, len(pos[0]))                                           
+    if len(pos[0]) < N:                                                            
+        sys.exit("Less objects than required!")                                    
+    #return                                                                        
+    return (robs_wn[pos][:N], sigma*r_obs[pos][:N],                              
+            Tobs_wn[pos][:N], sigma*Tobs[pos][:N],                                  
+            mass_wn[pos][:N], sigma*mass[pos][:N],                                  
+            ages_wn[pos][:N], sigma*ages[pos][:N])   
