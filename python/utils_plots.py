@@ -285,6 +285,47 @@ def FSE_f_gamma_rs(filepath, nBDs, rel_unc, ex, rank=100, PE="median"):
     return xi, yi, zi_1, zi_2, zi_3
 
 
+def FSE_f_gamma_rs_log(filepath, nBDs, rel_unc, ex, rank=100, PE="median"):             
+    # grid points                                                                   
+    f     = 1.
+    rs    = np.array([5., 10., 20.])
+    gamma = np.array([0., 0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])                         
+                                                                                    
+    FSE_1 = []; FSE_2 = []; FSE_3 = []                                              
+    for _rs in rs:                                                                  
+        for _g in gamma:                                                            
+            true = [np.log10(f), _g, np.log10(_rs)]                                                     
+            data = np.genfromtxt(filepath + "statistics_" + ex +                    
+                                 ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"             
+                                  %(nBDs, rel_unc, f, _g, _rs)), unpack=True)   
+            if PE=="median":                                                        
+                pe = np.array((data[3], data[4], data[5]))                          
+            elif PE=="mode":                                                        
+                pe = np.array((data[12], data[13], data[14]))                       
+            elif PE=="mean":                                                        
+                pe = np.array((data[0], data[1], data[2]))                          
+            elif PE=="ML":                                                          
+                pe = np.array((data[15], data[16], data[17]))                       
+            else:                                                                   
+                sys.exit("Point estimate not implemented!")                         
+            FSE_1.append(np.sqrt(1/rank*np.sum(np.power(pe[0] - true[0], 2)))/true[0])
+            if np.abs(_g) < 1e-5:                                                   
+                epsilon=1e-4                                                        
+            else:                                                                   
+                epsilon=0.                                                          
+            FSE_2.append(np.sqrt(1/rank*np.sum(np.power(pe[1] - true[1], 2)))/(true[1]+epsilon))
+            FSE_3.append(np.sqrt(1/rank*np.sum(np.power(pe[2] - true[2], 2)))/true[2])
+                                                                                    
+    xi = np.array([2.5, 7.5, 15, 25])                                               
+    yi = np.array([0., 0.25, 0.75, 1.05, 1.15, 1.25, 1.35, 1.45, 1.55])             
+    xi, yi = np.meshgrid(xi, yi, indexing="ij")                                     
+                                                                                    
+    zi_1   = np.array(FSE_1).reshape(len(rs), len(gamma))                           
+    zi_2   = np.array(FSE_2).reshape(len(rs), len(gamma))                           
+    zi_3   = np.array(FSE_3).reshape(len(rs), len(gamma))                           
+    # return                                                                        
+    return xi, yi, zi_1, zi_2, zi_3 
+
                                                                                     
 def MSE_f_gamma_rs(filepath, nBDs, rel_unc, ex, rank=100, PE="median"):             
     # grid points                                                                   
@@ -417,15 +458,21 @@ def grid_FSE(filepath, nBDs, rel_unc, relM, ex="ex3",
 def grid_FSE_all(filepath, nBDs, rel_unc, ex="ex1",
              ax=False, PE="median",
              plot_f=True, plot_g=False, ylabel=False, xlabel=False,
-             rank=100):
+             rank=100, log=False):
     """
     Plot FSE grid in (rs, gamma) 
     """
 
     norm = colors.BoundaryNorm(boundaries=np.arange(0, 1, 0.05), ncolors=256)
 
-    xi, yi, zi_1, zi_2, zi_3 = FSE_f_gamma_rs(filepath, nBDs, rel_unc,
+    if log!=True:
+        xi, yi, zi_1, zi_2, zi_3 = FSE_f_gamma_rs(filepath, nBDs, rel_unc,
                                               ex, rank=rank, PE=PE)
+    else:
+        print("Remember issue w/ log10(f=1) in FSE denominator --> need to properly deal w/ this!")
+        xi, yi, zi_1, zi_2, zi_3 = FSE_f_gamma_rs_log(filepath, nBDs, rel_unc,      
+                                              ex, rank=rank, PE=PE)         
+
     if ax==False:
         fig, ax = plt.subplots(1, 1, figsize=(5, 5))
     if plot_f==True:
@@ -591,6 +638,9 @@ def coverage_f_gamma_rs(filepath, nBDs, rel_unc, ex, rank=100, CR="symmetric"):
             if CR=="symmetric":
                 low  = np.array((data[6], data[7], data[8]))
                 high = np.array((data[9], data[10], data[11]))
+            elif CR=="LI":
+                low  = np.array((data[18], data[19], data[20]))
+                high = np.array((data[21], data[22], data[23]))
             else:
                 sys.exit("Credible interval not implemented!")
             one = f > low[0]
@@ -611,6 +661,46 @@ def coverage_f_gamma_rs(filepath, nBDs, rel_unc, ex, rank=100, CR="symmetric"):
     zi_3   = np.array(cove_3).reshape(len(rs), len(gamma))
     # return
     return xi, yi, zi_1, zi_2, zi_3
+
+def coverage_f_gamma_rs_log(filepath, nBDs, rel_unc, ex, rank=100, CR="symmetric"): 
+    # grid points                                                               
+    f     = 1.                                                                  
+    rs    = np.array([5., 10., 20.])                                            
+    gamma = np.array([0., 0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])                     
+                                                                                
+    cove_1 = []; cove_2 = []; cove_3 = []                                       
+    for _rs in rs:                                                              
+        for _g in gamma:                                                        
+            true = [np.log10(f), _g, np.log10(_rs)]                                                 
+            data = np.genfromtxt(filepath + "statistics_" + ex +                
+                                 ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"         
+                                  %(nBDs, rel_unc, f, _g, _rs)), unpack=True)   
+            if CR=="symmetric":                                                 
+                low  = np.array((data[6], data[7], data[8]))                    
+                high = np.array((data[9], data[10], data[11]))                  
+            elif CR=="LI":                                                      
+                low  = np.array((data[18], data[19], data[20]))                 
+                high = np.array((data[21], data[22], data[23]))                 
+            else:                                                               
+                sys.exit("Credible interval not implemented!")                  
+            one = true[0] > low[0]                                                    
+            two = true[0] < high[0]                                                   
+            cove_1.append(len(np.where((one==True) & (two==True))[0]))          
+            one = true[1] > low[1]                                                   
+            two = true[1] < high[1]                                                  
+            cove_2.append(len(np.where((one==True) & (two==True))[0]))          
+            one = true[2] > low[2]                                                  
+            two = true[2] < high[2]                                                 
+            cove_3.append(len(np.where((one==True) & (two==True))[0]))          
+    xi = np.array([2.5, 7.5, 15, 25])                                           
+    yi = np.array([0., 0.25, 0.75, 1.05, 1.15, 1.25, 1.35, 1.45, 1.55])         
+    xi, yi = np.meshgrid(xi, yi, indexing="ij")                                 
+                                                                                
+    zi_1   = np.array(cove_1).reshape(len(rs), len(gamma))                      
+    zi_2   = np.array(cove_2).reshape(len(rs), len(gamma))                      
+    zi_3   = np.array(cove_3).reshape(len(rs), len(gamma))                      
+    # return                                                                    
+    return xi, yi, zi_1, zi_2, zi_3 
 
 
 def coverage_f_gamma_rs_each(filepath, nBDs, rel_unc, relM, relA, relR, ex,                          
@@ -718,7 +808,7 @@ from scipy.interpolate import griddata
 def grid_coverage_all(filepath, nBDs, rel_unc, ex="ex1",
              ax=False, CR="symmetric",
              plot_f=True, plot_g=False, ylabel=False, xlabel=False,
-             rank=100):
+             rank=100, log=False):
     """
     Plot coverage grid in (rs, gamma) 
     """
@@ -727,8 +817,13 @@ def grid_coverage_all(filepath, nBDs, rel_unc, ex="ex1",
     bounds = np.array([0, 10, 15, 20, 30, 40, 50, 68, 70, 75, 80, 85, 90, 95, 100])    
     norm = colors.BoundaryNorm(boundaries=bounds, ncolors=256)
 
-    xi, yi, zi_1, zi_2, zi_3 = coverage_f_gamma_rs(filepath, nBDs, rel_unc,
+    if log!=False:
+        xi, yi, zi_1, zi_2, zi_3 = coverage_f_gamma_rs(filepath, nBDs, rel_unc,
                                               ex, rank=rank, CR=CR)
+    else:
+        xi, yi, zi_1, zi_2, zi_3 = coverage_f_gamma_rs_log(filepath, nBDs, 
+                                              rel_unc, ex, rank=rank, CR=CR)
+
     rs = [2.5, 5., 10., 20., 25.]
     g  = [0., 0.5, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5]
     #xi_c, yi_c = np.meshgrid(rs, g)
