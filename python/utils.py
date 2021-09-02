@@ -78,7 +78,7 @@ def heat_DM(r, f=1, R=R_jup.value, M=M_jup.value, Rsun=8.178,
 def T_DM(r, R=R_jup.value, M=M_jup.value, Rsun=8.178, f=1., 
          params=[1., 20., 0.42], v=None, epsilon=1.):                                       
     """                                                                        
-    DM temperature                                                             
+    DM temperature [K]                                               
     """   
     # escape velocity
     vesc   = np.sqrt(2*_G*M/R)*1e-3 # km/s                      

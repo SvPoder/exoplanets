@@ -113,12 +113,12 @@ def statistics(filepath, filepath2, ex, nBDs, rel_unc, f, gamma, rs,
         # load posterior + likelihood
         file_name  = (filepath + ("N%isigma%.1f/posterior_" %(nBDs, rel_unc))
                      + ex + 
-                     ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1fv%i" 
+                     ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f_nwalkers100v%i" 
                      %(nBDs, rel_unc, f, gamma, rs, i+1)))
         samples    = pickle.load(open(file_name, "rb"))
         file_name2 = (filepath2 + ("N%isigma%.1f/like_" %(nBDs, rel_unc))
                      + ex +
-                     ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1fv%i"
+                     ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f_nwalkers100v%i"
                      %(nBDs, rel_unc, f, gamma, rs, i+1)))
         like       = pickle.load(open(file_name2, "rb"))
 
@@ -140,8 +140,8 @@ def statistics(filepath, filepath2, ex, nBDs, rel_unc, f, gamma, rs,
     #hpd_1sigma = np.array(hpd_1sigma)    
     #print(hpd_1sigma.shape)
 
-    filepath = "/home/mariacst/exoplanets/results/velocity/v100/statistics_"
-    output = open(filepath + ex + ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f" 
+    filepath = "/home/mariacst/exoplanets/results/velocity/v100/fixedT100K/statistics_"
+    output = open(filepath + ex + ("_nwalkers100_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f" 
                               %(nBDs, rel_unc, f, gamma, rs)), "w")
     for i in range(rank):
         for j in range(D):
@@ -233,18 +233,18 @@ def statistics(filepath, filepath2, ex, nBDs, rel_unc, f, gamma, rs,
 
 if __name__ == '__main__':
     _path     = "/hdfs/local/mariacst/exoplanets/results/"
-    _path_f   = "velocity/v100/check/"
+    _path_f   = "velocity/v100/fixedT100K/"
     filepath  = _path + "posterior/" + _path_f
     filepath2 = _path + "likelihood/" + _path_f
     ex        = sys.argv[1]
     N         = int(sys.argv[2])
-    sigma     = float(sys.argv[3])
-    print(N)
+    #sigma     = float(sys.argv[3])
+    #print(N)
     nBDs     = [N]
-    rel_unc  = [sigma]
+    rel_unc  = [0.1, 0.2, 0.3]
     f        = 1.
     rs       = [5., 10., 20.]
-    gamma    = [0., 0.5, 1., 1.1, 1.2, 1.3, 1.4, 1.5]
+    gamma    = [0.1, 0.5, 1.]#, 1.1, 1.2, 1.3, 1.4, 1.5]
 
     for N in nBDs:
         for rel in rel_unc:
@@ -256,6 +256,6 @@ if __name__ == '__main__':
                                    100, 3)
                     except Exception as e:
                         print(e)
-                       print("este no!")
-                       continue
+                        print("este no!")
+                        continue
 
