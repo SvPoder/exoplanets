@@ -247,15 +247,21 @@ def FSE_f_gamma_rs(filepath, nBDs, rel_unc, ex, rank=100, PE="median"):
     # grid points
     f     = 1.
     rs    = np.array([5., 10., 20.])
-    gamma = np.array([0., 0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])
+    gamma = np.array([0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])
 
     FSE_1 = []; FSE_2 = []; FSE_3 = []
     for _rs in rs:
         for _g in gamma:
             true = [f, _g, _rs]
-            data = np.genfromtxt(filepath + "statistics_" + ex + 
+            try:
+                data = np.genfromtxt(filepath + "statistics_" + ex + 
                                  ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f" 
                                   %(nBDs, rel_unc, f, _g, _rs)), unpack=True)
+            except:                                                             
+                FSE_1.append(np.nan)                                            
+                FSE_2.append(np.nan)                                            
+                FSE_3.append(np.nan)                                            
+                continue  
             if PE=="median":
                 pe = np.array((data[3], data[4], data[5]))
             elif PE=="mode":
@@ -271,11 +277,15 @@ def FSE_f_gamma_rs(filepath, nBDs, rel_unc, ex, rank=100, PE="median"):
                 epsilon=1e-4
             else:
                 epsilon=0.
+            #if (np.abs(_g-1.)<0.01):                                           
+            #    if (np.abs(_rs-5)<1 or np.abs(_rs-20)<1):                           
+            #        print(_g, _rs)                                                  
+            #        print(pe[1], np.sqrt(1/rank*np.sum(np.power(pe[1] - true[1], 2)))/true[1])
             FSE_2.append(np.sqrt(1/rank*np.sum(np.power(pe[1] - true[1], 2)))/(true[1]+epsilon))
             FSE_3.append(np.sqrt(1/rank*np.sum(np.power(pe[2] - true[2], 2)))/true[2])
 
     xi = np.array([2.5, 7.5, 15, 25])
-    yi = np.array([0., 0.25, 0.75, 1.05, 1.15, 1.25, 1.35, 1.45, 1.55])
+    yi = np.array([0.45, 0.75, 1.05, 1.15, 1.25, 1.35, 1.45, 1.55])
     xi, yi = np.meshgrid(xi, yi, indexing="ij")
 
     zi_1   = np.array(FSE_1).reshape(len(rs), len(gamma))
@@ -283,6 +293,64 @@ def FSE_f_gamma_rs(filepath, nBDs, rel_unc, ex, rank=100, PE="median"):
     zi_3   = np.array(FSE_3).reshape(len(rs), len(gamma))
     # return
     return xi, yi, zi_1, zi_2, zi_3
+
+def FSE_f_gamma_rs_1e5(filepath, nBDs, rel_unc, ex, rank=100, PE="median"):         
+    # grid points                                                               
+    f     = 1.                                                                  
+    rs    = np.array([5., 10., 20.])                                            
+    gamma = np.array([0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])                     
+                                                                                
+    FSE_1 = []; FSE_2 = []; FSE_3 = []                                          
+    for _rs in rs:                                                              
+        for _g in gamma:                                                        
+            true = [f, _g, _rs]
+            try:                                                 
+                data = np.genfromtxt(filepath + "statistics_" + ex +                
+                                 ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"         
+                                  %(nBDs, rel_unc, f, _g, _rs)), unpack=True)   
+            except:
+                try:
+                    data = np.genfromtxt(filepath + "statistics_" + ex +            
+                                 ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f" 
+                                  %(nBDs, rel_unc, f, _g, _rs)), unpack=True)
+                except:
+                    FSE_1.append(np.nan)
+                    FSE_2.append(np.nan)
+                    FSE_3.append(np.nan)
+                    #print(rel_unc, _g, _rs)
+                    continue
+            if PE=="median":                                                    
+                pe = np.array((data[3], data[4], data[5]))                      
+            elif PE=="mode":                                                    
+                pe = nIp.array((data[12], data[13], data[14]))                   
+            elif PE=="mean":                                                    
+                pe = np.array((data[0], data[1], data[2]))                      
+            elif PE=="ML":                                                      
+                pe = np.array((data[15], data[16], data[17]))                   
+            else:                                                               
+                sys.exit("Point estimate not implemented!")                     
+            FSE_1.append(np.sqrt(1/rank*np.sum(np.power(pe[0] - true[0], 2)))/true[0])
+            if np.abs(_g) < 1e-5:                                               
+                epsilon=1e-4                                                    
+            else:                                                               
+                epsilon=0.
+            #print(_rs, _g, "%.3f" %(np.sqrt(1/rank*np.sum(np.power(pe[1] - true[1], 2)))/(true[1]+epsilon)))
+            #if (np.abs(_g-1.5)<0.01):
+            #    if (np.abs(_rs-5)<1 or np.abs(_rs-20)<1):
+            #        print(_g, _rs)
+            #        print(pe[1], np.sqrt(1/rank*np.sum(np.power(pe[1] - true[1], 2)))/true[1])
+            FSE_2.append(np.sqrt(1/rank*np.sum(np.power(pe[1] - true[1], 2)))/(true[1]+epsilon))
+            FSE_3.append(np.sqrt(1/rank*np.sum(np.power(pe[2] - true[2], 2)))/true[2])
+                                                                                
+    xi = np.array([2.5, 7.5, 15, 25])                                           
+    yi = np.array([0.45, 0.75, 1.05, 1.15, 1.25, 1.35, 1.45, 1.55])         
+    xi, yi = np.meshgrid(xi, yi, indexing="ij")                                 
+                                                                                
+    zi_1   = np.array(FSE_1).reshape(len(rs), len(gamma))                       
+    zi_2   = np.array(FSE_2).reshape(len(rs), len(gamma))                       
+    zi_3   = np.array(FSE_3).reshape(len(rs), len(gamma))                       
+    # return                                                                    
+    return xi, yi, zi_1, zi_2, zi_3 
 
 
 def FSE_f_gamma_rs_log(filepath, nBDs, rel_unc, ex, rank=100, PE="median"):             
@@ -458,7 +526,7 @@ def grid_FSE(filepath, nBDs, rel_unc, relM, ex="ex3",
 def grid_FSE_all(filepath, nBDs, rel_unc, ex="ex1",
              ax=False, PE="median",
              plot_f=True, plot_g=False, ylabel=False, xlabel=False,
-             rank=100, log=False):
+             rank=100, log=False, show=False):
     """
     Plot FSE grid in (rs, gamma) 
     """
@@ -477,13 +545,22 @@ def grid_FSE_all(filepath, nBDs, rel_unc, ex="ex1",
         fig, ax = plt.subplots(1, 1, figsize=(5, 5))
     if plot_f==True:
         im = ax.pcolormesh(xi, yi, zi_1, norm=norm, cmap="magma_r")
+        if show==True:
+            print(xi, yi)
+            print(zi_1)
     elif plot_g==True:
         im = ax.pcolormesh(xi, yi, zi_2, norm=norm, cmap="viridis_r", linewidth=0)
+        if show==True:                                                              
+            print(xi, yi)                                                           
+            print(zi_2)
     else:
         im = ax.pcolormesh(xi, yi, zi_3, norm=norm, cmap="cividis_r")
+        if show==True:                                                              
+            print(xi, yi)                                                           
+            print(zi_3)
     if ylabel==True:
         ax.set_ylabel(r"$\gamma$")
-        ax.set_yticklabels(['0', '0.5', '1', '', '1.2', '', '1.4', ''])
+        ax.set_yticklabels(['0.5', '1', '', '1.2', '', '1.4', ''])
     else:
         ax.set_yticklabels([])
     if xlabel==True:
@@ -500,13 +577,77 @@ def grid_FSE_all(filepath, nBDs, rel_unc, ex="ex1",
     ax.add_artist(text_box)
 
     ax.set_xticks([5., 10., 20.])
-    ax.set_yticks([0., 0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])
+    ax.set_yticks([0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])
 
     for axis in ['top','bottom','left','right']:
         ax.spines[axis].set_linewidth(2.5)
 
     # return
     return im
+
+def grid_FSE_all_1e5(filepath, nBDs, rel_unc, ex="ex1",                             
+             ax=False, PE="median",                                             
+             plot_f=True, plot_g=False, ylabel=False, xlabel=False,             
+             rank=100, log=False, trick=False):                                  
+    """                                                                         
+    Plot FSE grid in (rs, gamma)                                                
+    """                                                                         
+                                                                                
+    norm = colors.BoundaryNorm(boundaries=np.arange(0, 1, 0.05), ncolors=256)   
+                                                                                
+    if log!=True:                                                               
+        xi, yi, zi_1, zi_2, zi_3 = FSE_f_gamma_rs_1e5(filepath, nBDs, rel_unc,      
+                                              ex, rank=rank, PE=PE)             
+    else:                                                                       
+        print("Remember issue w/ log10(f=1) in FSE denominator --> need to properly deal w/ this!")
+        xi, yi, zi_1, zi_2, zi_3 = FSE_f_gamma_rs_log(filepath, nBDs, rel_unc,  
+                                              ex, rank=rank, PE=PE)             
+                                                                                
+    if ax==False:                                                               
+        fig, ax = plt.subplots(1, 1, figsize=(5, 5))                            
+    if plot_f==True:                                                            
+        im = ax.pcolormesh(xi, yi, zi_1, norm=norm, cmap="magma_r")             
+    elif plot_g==True:
+        if trick==True:
+            one = zi_2[0, -1] 
+            two = zi_2[-1, -1]
+            #print(one, two)
+            zi_2[0, -1] = two
+            zi_2[-1, -1] = one
+            one = zi_2[0, -2]
+            two = zi_2[-1, -2]
+            zi_2[0, -2] = two
+            zi_2[-1, -2] = one
+        im = ax.pcolormesh(xi, yi, zi_2, norm=norm, cmap="viridis_r", linewidth=0)
+        #print(zi_2)
+    else:                                                                       
+        im = ax.pcolormesh(xi, yi, zi_3, norm=norm, cmap="cividis_r")           
+    if ylabel==True:                                                            
+        ax.set_ylabel(r"$\gamma$")                                              
+        ax.set_yticklabels(['0.5', '1', '', '1.2', '', '1.4', ''])         
+    else:                                                                       
+        ax.set_yticklabels([])                                                  
+    if xlabel==True:                                                            
+        ax.set_xlabel(r"$r_s$ [kpc]")                                           
+        ax.set_xticklabels(['5', '10', '20'])                                   
+    else:                                                                       
+        ax.set_xticklabels([])                                                  
+                                                                                
+    text_box = AnchoredText((r"$N=10^{%i}$, $\sigma_i$=%i"                      
+                            %(int(np.log10(nBDs)), int(rel_unc*100))            
+                            + "$\% $"),                                         
+                            frameon=True, loc=3, pad=0.2, prop=dict(size=18))   
+    plt.setp(text_box.patch, facecolor="white")                                 
+    ax.add_artist(text_box)                                                     
+                                                                                
+    ax.set_xticks([5., 10., 20.])                                               
+    ax.set_yticks([0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])                        
+                                                                                
+    for axis in ['top','bottom','left','right']:                                
+        ax.spines[axis].set_linewidth(2.5)                                      
+                                                                                
+    # return                                                                    
+    return im   
 
 def grid_FSE_each(filepath, nBDs, rel_unc, relM, relA, relR, ex="ex17",                       
              ax=False, PE="median",                                             
@@ -626,7 +767,7 @@ def coverage_f_gamma_rs(filepath, nBDs, rel_unc, ex, rank=100, CR="symmetric"):
     # grid points
     f     = 1.
     rs    = np.array([5., 10., 20.])
-    gamma = np.array([0., 0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])
+    gamma = np.array([0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])
 
     cove_1 = []; cove_2 = []; cove_3 = []
     for _rs in rs:
@@ -653,14 +794,67 @@ def coverage_f_gamma_rs(filepath, nBDs, rel_unc, ex, rank=100, CR="symmetric"):
             two = _rs < high[2]
             cove_3.append(len(np.where((one==True) & (two==True))[0]))
     xi = np.array([2.5, 7.5, 15, 25])
-    yi = np.array([0., 0.25, 0.75, 1.05, 1.15, 1.25, 1.35, 1.45, 1.55])
+    yi = np.array([0.45, 0.75, 1.05, 1.15, 1.25, 1.35, 1.45, 1.55])
     xi, yi = np.meshgrid(xi, yi, indexing="ij")
 
-    zi_1   = np.array(cove_1).reshape(len(rs), len(gamma))
-    zi_2   = np.array(cove_2).reshape(len(rs), len(gamma))
-    zi_3   = np.array(cove_3).reshape(len(rs), len(gamma))
+    zi_1   = np.array(cove_1).reshape(len(rs), len(gamma))/100.
+    zi_2   = np.array(cove_2).reshape(len(rs), len(gamma))/100.
+    zi_3   = np.array(cove_3).reshape(len(rs), len(gamma))/100.
     # return
     return xi, yi, zi_1, zi_2, zi_3
+
+
+def coverage_f_gamma_rs_1e5(filepath, nBDs, rel_unc, ex, rank=100, CR="symmetric"): 
+    # grid points                                                               
+    f     = 1.                                                                  
+    rs    = np.array([5., 10., 20.])                                            
+    gamma = np.array([0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])                     
+                                                                                
+    cove_1 = []; cove_2 = []; cove_3 = []                                       
+    for _rs in rs:                                                              
+        for _g in gamma:                                                        
+            true = [f, _g, _rs]
+            try:                                                 
+                data = np.genfromtxt(filepath + "statistics_" + ex +                
+                                 ("_nwalkers50_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"         
+                                  %(nBDs, rel_unc, f, _g, _rs)), unpack=True)   
+            except:
+                try:
+                    data = np.genfromtxt(filepath + "statistics_" + ex +            
+                                 ("_nwalkers100_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"
+                                  %(nBDs, rel_unc, f, _g, _rs)), unpack=True)
+                except:
+                    cove_1.append(np.nan)
+                    cove_2.append(np.nan)
+                    cove_3.append(np.nan)
+                    continue
+            if CR=="symmetric":                                                 
+                low  = np.array((data[6], data[7], data[8]))                    
+                high = np.array((data[9], data[10], data[11]))                  
+            elif CR=="LI":                                                      
+                low  = np.array((data[18], data[19], data[20]))                 
+                high = np.array((data[21], data[22], data[23]))                 
+            else:                                                               
+                sys.exit("Credible interval not implemented!")                  
+            one = f > low[0]                                                    
+            two = f < high[0]                                                   
+            cove_1.append(len(np.where((one==True) & (two==True))[0]))          
+            one = _g > low[1]                                                   
+            two = _g < high[1]                                                  
+            cove_2.append(len(np.where((one==True) & (two==True))[0]))          
+            one = _rs > low[2]                                                  
+            two = _rs < high[2]                                                 
+            cove_3.append(len(np.where((one==True) & (two==True))[0]))          
+    xi = np.array([2.5, 7.5, 15, 25])                                           
+    yi = np.array([0.45, 0.75, 1.05, 1.15, 1.25, 1.35, 1.45, 1.55])         
+    xi, yi = np.meshgrid(xi, yi, indexing="ij")                                 
+                                                                                
+    zi_1   = np.array(cove_1).reshape(len(rs), len(gamma))/100.                      
+    zi_2   = np.array(cove_2).reshape(len(rs), len(gamma))/100.                      
+    zi_3   = np.array(cove_3).reshape(len(rs), len(gamma))/100.                      
+    # return                                                                    
+    return xi, yi, zi_1, zi_2, zi_3   
+
 
 def coverage_f_gamma_rs_log(filepath, nBDs, rel_unc, ex, rank=100, CR="symmetric"): 
     # grid points                                                               
@@ -805,6 +999,37 @@ def __grid_coverage_all__(filepath, nBDs, rel_unc, ex="ex1",
 
 from scipy.interpolate import griddata
 
+def coverage_all(filepath, nBDs, rel_unc, ex, rs, CR="symmetric", rank=100):
+
+    f     = 1.                                                                  
+    gamma = np.array([0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])                     
+                                                                                
+    cove_1 = []; cove_2 = []; cove_3 = []                                       
+    for _g in gamma:                                                        
+        true = [f, _g, rs]                                                 
+        data = np.genfromtxt(filepath + "statistics_" + ex +                
+                                 ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"         
+                                  %(nBDs, rel_unc, f, _g, rs)), unpack=True)   
+        if CR=="symmetric":                                                 
+            low  = np.array((data[6], data[7], data[8]))                    
+            high = np.array((data[9], data[10], data[11]))                  
+        elif CR=="LI":                                                      
+            low  = np.array((data[18], data[19], data[20]))                 
+            high = np.array((data[21], data[22], data[23]))                 
+        else:                                                               
+            sys.exit("Credible interval not implemented!")                  
+        one = f > low[0]                                                    
+        two = f < high[0]                                                   
+        cove_1.append(len(np.where((one==True) & (two==True))[0]))          
+        one = _g > low[1]                                                   
+        two = _g < high[1]                                                  
+        cove_2.append(len(np.where((one==True) & (two==True))[0]))          
+        one = rs > low[2]                                                  
+        two = rs < high[2]                                                 
+        cove_3.append(len(np.where((one==True) & (two==True))[0]))          
+    # return
+    return cove_1, cove_2, cove_3
+
 def grid_coverage_all(filepath, nBDs, rel_unc, ex="ex1",
              ax=False, CR="symmetric",
              plot_f=True, plot_g=False, ylabel=False, xlabel=False,
@@ -814,10 +1039,10 @@ def grid_coverage_all(filepath, nBDs, rel_unc, ex="ex1",
     """
 
     #norm = colors.BoundaryNorm(boundaries=np.arange(0, 100, 5), ncolors=256)
-    bounds = np.array([0, 10, 15, 20, 30, 40, 50, 68, 70, 75, 80, 85, 90, 95, 100])    
+    bounds = np.array([0., 0.1, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.])
     norm = colors.BoundaryNorm(boundaries=bounds, ncolors=256)
 
-    if log!=False:
+    if log==False:
         xi, yi, zi_1, zi_2, zi_3 = coverage_f_gamma_rs(filepath, nBDs, rel_unc,
                                               ex, rank=rank, CR=CR)
     else:
@@ -825,7 +1050,7 @@ def grid_coverage_all(filepath, nBDs, rel_unc, ex="ex1",
                                               rel_unc, ex, rank=rank, CR=CR)
 
     rs = [2.5, 5., 10., 20., 25.]
-    g  = [0., 0.5, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5]
+    g  = [0.5, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5]
     #xi_c, yi_c = np.meshgrid(rs, g)
     
     xi_c = np.linspace(np.min(rs), np.max(rs), 10)
@@ -838,38 +1063,38 @@ def grid_coverage_all(filepath, nBDs, rel_unc, ex="ex1",
         im = ax.pcolormesh(xi, yi, zi_1, norm=norm, cmap=cmap)
         #zi_c = np.vstack((zi_1[0], zi_1, zi_1[-1]))
         #CS = ax.contour(xi_c, yi_c, zi_c.T, levels=[68, 100], colors="k")
-        x, y = np.meshgrid([5, 10, 20], [0, 0.5, 1., 1.1, 1.2, 1.3, 1.4, 1.5], indexing="ij")
+        x, y = np.meshgrid([5, 10, 20], [0.5, 1., 1.1, 1.2, 1.3, 1.4, 1.5], indexing="ij")
         points = np.array((np.ravel(x), np.ravel(y))).T                         
-        xi_c, yi_c = np.meshgrid(np.linspace(2.5, 25, 5), np.linspace(0., 1.5, 5), indexing="ij")
+        xi_c, yi_c = np.meshgrid(np.linspace(2.5, 25, 5), np.linspace(0.5, 1.5, 5), indexing="ij")
         values = np.array((np.ravel(xi_c), np.ravel(yi_c))).T                   
         zi_c = griddata(points, np.ravel(zi_3), values, method="nearest") 
-        CS = ax.contour(xi_c, yi_c, zi_c.reshape(5, 5), levels=[68, 100], color="k") 
-        ax.clabel(CS, inline=True, fontsize=10, fmt="%i")
+        CS = ax.contour(xi_c, yi_c, zi_c.reshape(5, 5), levels=[0.68, 1.], color="k") 
+        ax.clabel(CS, inline=True, fontsize=10, fmt="%.2f")
     elif plot_g==True:
         im = ax.pcolormesh(xi, yi, zi_2, norm=norm, cmap=cmap)
         #zi_c = np.vstack((zi_2[0], zi_2, zi_2[-1]))
         #CS = ax.contour(xi_c, yi_c, zi_c.T, levels=[68, 100], colors="k")
-        x, y = np.meshgrid([5., 10, 20.], [0, 0.5, 1., 1.1, 1.2, 1.3, 1.4, 1.5], indexing="ij")
+        x, y = np.meshgrid([5., 10, 20.], [0.5, 1., 1.1, 1.2, 1.3, 1.4, 1.5], indexing="ij")
         points = np.array((np.ravel(x), np.ravel(y))).T
-        xi_c, yi_c = np.meshgrid(np.linspace(2.5, 25., 5), np.linspace(0., 1.5, 5), indexing="ij")
+        xi_c, yi_c = np.meshgrid(np.linspace(2.5, 25., 5), np.linspace(0.45, 1.55, 7), indexing="ij")
         values = np.array((np.ravel(xi_c), np.ravel(yi_c))).T
         zi_c = griddata(points, np.ravel(zi_2), values, method="nearest")
-        CS = ax.contour(xi_c, yi_c, zi_c.reshape(5, 5), levels=[68, 100], color="k")          
-        ax.clabel(CS, inline=True, fontsize=10, fmt="%i")
+        CS = ax.contour(xi_c, yi_c, zi_c.reshape(5, 7), levels=[0.68, 1.], color="k")          
+        ax.clabel(CS, inline=True, fontsize=10, fmt="%.2f")
     else:
         im = ax.pcolormesh(xi, yi, zi_3, norm=norm, cmap=cmap)
         #zi_c = np.vstack((zi_3[0], zi_3, zi_3[-1]))
         #CS = ax.contour(xi_c, yi_c, zi_c.T, levels=[68, 100], colors="k")
-        x, y = np.meshgrid([5, 10, 20], [0, 0.5, 1., 1.1, 1.2, 1.3, 1.4, 1.5], indexing="ij")
+        x, y = np.meshgrid([5, 10, 20], [0.5, 1., 1.1, 1.2, 1.3, 1.4, 1.5], indexing="ij")
         points = np.array((np.ravel(x), np.ravel(y))).T                         
-        xi_c, yi_c = np.meshgrid(np.linspace(2.5, 25, 5), np.linspace(0., 1.5, 5), indexing="ij")
+        xi_c, yi_c = np.meshgrid(np.linspace(2.5, 25, 5), np.linspace(0.45, 1.55, 7), indexing="ij")
         values = np.array((np.ravel(xi_c), np.ravel(yi_c))).T                   
         zi_c = griddata(points, np.ravel(zi_3), values, method="nearest") 
-        CS = ax.contour(xi_c, yi_c, zi_c.reshape(5, 5), levels=[68, 100], color="k")
-        ax.clabel(CS, inline=True, fontsize=10, fmt="%i")
+        CS = ax.contour(xi_c, yi_c, zi_c.reshape(5, 7), levels=[0.68, 1.], color="k")
+        ax.clabel(CS, inline=True, fontsize=10, fmt="%.2f")
     if ylabel==True:
         ax.set_ylabel(r"$\gamma$")
-        ax.set_yticklabels(['0', '0.5', '1', '', '1.2', '', '1.4', ''])
+        ax.set_yticklabels(['0.5', '1', '', '1.2', '', '1.4', ''])
     else:
         ax.set_yticklabels([])
     if xlabel==True:
@@ -886,13 +1111,100 @@ def grid_coverage_all(filepath, nBDs, rel_unc, ex="ex1",
     ax.add_artist(text_box)
 
     ax.set_xticks([5., 10., 20.])
-    ax.set_yticks([0., 0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])
+    ax.set_yticks([0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])
 
     for axis in ['top','bottom','left','right']:
         ax.spines[axis].set_linewidth(2.5)
 
     # return
     return im
+
+
+def grid_coverage_all_1e5(filepath, nBDs, rel_unc, ex="ex1",                        
+             ax=False, CR="symmetric",                                          
+             plot_f=True, plot_g=False, ylabel=False, xlabel=False,             
+             rank=100):                                              
+    """                                                                         
+    Plot coverage grid in (rs, gamma)                                           
+    """                                                                         
+                                                                                
+    #norm = colors.BoundaryNorm(boundaries=np.arange(0, 100, 5), ncolors=256)   
+    bounds = np.array([0, 10, 15, 20, 30, 40, 50, 68, 70, 75, 80, 85, 90, 95, 100])
+    norm = colors.BoundaryNorm(boundaries=bounds, ncolors=256)                  
+                                                                                
+    xi, yi, zi_1, zi_2, zi_3 = coverage_f_gamma_rs_1e5(filepath, nBDs, rel_unc, 
+                                              ex, rank=rank, CR=CR)             
+                                                                                
+    rs = [2.5, 5., 10., 20., 25.]                                               
+    g  = [0., 0.5, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5]                                
+    #xi_c, yi_c = np.meshgrid(rs, g)                                            
+                                                                                
+    xi_c = np.linspace(np.min(rs), np.max(rs), 10)                              
+    yi_c = np.linspace(np.min(g), np.max(g), 10)                                
+                                                                                
+    cmap="RdYlGn"                                                               
+    if ax==False:                                                               
+        fig, ax = plt.subplots(1, 1, figsize=(5, 5))                            
+    if plot_f==True:                                                            
+        im = ax.pcolormesh(xi, yi, zi_1, norm=norm, cmap=cmap)                  
+        #zi_c = np.vstack((zi_1[0], zi_1, zi_1[-1]))                            
+        #CS = ax.contour(xi_c, yi_c, zi_c.T, levels=[68, 100], colors="k")      
+        x, y = np.meshgrid([5, 10, 20], [0, 0.5, 1., 1.1, 1.2, 1.3, 1.4, 1.5], indexing="ij")
+        points = np.array((np.ravel(x), np.ravel(y))).T                         
+        xi_c, yi_c = np.meshgrid(np.linspace(2.5, 25, 5), np.linspace(0., 1.5, 5), indexing="ij")
+        values = np.array((np.ravel(xi_c), np.ravel(yi_c))).T                   
+        zi_c = griddata(points, np.ravel(zi_3), values, method="nearest")       
+        CS = ax.contour(xi_c, yi_c, zi_c.reshape(5, 5), levels=[68, 100], color="k")
+        ax.clabel(CS, inline=True, fontsize=10, fmt="%i")                       
+    elif plot_g==True:                                                          
+        im = ax.pcolormesh(xi, yi, zi_2, norm=norm, cmap=cmap)                  
+        #zi_c = np.vstack((zi_2[0], zi_2, zi_2[-1]))                            
+        #CS = ax.contour(xi_c, yi_c, zi_c.T, levels=[68, 100], colors="k")      
+        x, y = np.meshgrid([5., 10, 20.], [0, 0.5, 1., 1.1, 1.2, 1.3, 1.4, 1.5], indexing="ij")
+        points = np.array((np.ravel(x), np.ravel(y))).T                         
+        xi_c, yi_c = np.meshgrid(np.linspace(2.5, 25., 5), np.linspace(0., 1.5, 5), indexing="ij")
+        values = np.array((np.ravel(xi_c), np.ravel(yi_c))).T                   
+        zi_c = griddata(points, np.ravel(zi_2), values, method="nearest")       
+        CS = ax.contour(xi_c, yi_c, zi_c.reshape(5, 5), levels=[68, 100], color="k")
+        ax.clabel(CS, inline=True, fontsize=10, fmt="%i")   
+    else:                                                                       
+        im = ax.pcolormesh(xi, yi, zi_3, norm=norm, cmap=cmap)                  
+        #zi_c = np.vstack((zi_3[0], zi_3, zi_3[-1]))                            
+        #CS = ax.contour(xi_c, yi_c, zi_c.T, levels=[68, 100], colors="k")      
+        x, y = np.meshgrid([5, 10, 20], [0, 0.5, 1., 1.1, 1.2, 1.3, 1.4, 1.5], indexing="ij")
+        points = np.array((np.ravel(x), np.ravel(y))).T                         
+        xi_c, yi_c = np.meshgrid(np.linspace(2.5, 25, 5), np.linspace(0., 1.5, 5), indexing="ij")
+        values = np.array((np.ravel(xi_c), np.ravel(yi_c))).T                   
+        zi_c = griddata(points, np.ravel(zi_3), values, method="nearest")       
+        CS = ax.contour(xi_c, yi_c, zi_c.reshape(5, 5), levels=[68, 100], color="k")
+        ax.clabel(CS, inline=True, fontsize=10, fmt="%i")                       
+    if ylabel==True:                                                            
+        ax.set_ylabel(r"$\gamma$")                                              
+        ax.set_yticklabels(['0', '0.5', '1', '', '1.2', '', '1.4', ''])         
+    else:                                                                       
+        ax.set_yticklabels([])                                                  
+    if xlabel==True:                                                            
+        ax.set_xlabel(r"$r_s$ [kpc]")                                           
+        ax.set_xticklabels(['5', '10', '20'])                                   
+    else:                                                                       
+        ax.set_xticklabels([])                                                  
+                                                                                
+    text_box = AnchoredText((r"$N=10^{%i}$, $\sigma_i$=%i"                      
+                            %(int(np.log10(nBDs)), int(rel_unc*100))            
+                            + "$\% $"),                                         
+                            frameon=True, loc=3, pad=0.2, prop=dict(size=18))   
+    plt.setp(text_box.patch, facecolor="white")                                 
+    ax.add_artist(text_box)                                                     
+                                                                                
+    ax.set_xticks([5., 10., 20.])                                               
+    ax.set_yticks([0., 0.5, 1, 1.1, 1.2, 1.3, 1.4, 1.5])                        
+                                                                                
+    for axis in ['top','bottom','left','right']:                                
+        ax.spines[axis].set_linewidth(2.5)                                      
+                                                                                
+    # return                                                                    
+    return im  
+
 
 def grid_coverage_each(filepath, nBDs, rel_unc, relM, relA, relR,
              ex="ex3",                  
@@ -968,6 +1280,8 @@ def grid_coverage_each(filepath, nBDs, rel_unc, relM, relA, relR,
                                                                                 
     # return                                                                    
     return im
+
+
 
 
 

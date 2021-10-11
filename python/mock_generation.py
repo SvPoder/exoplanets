@@ -93,7 +93,7 @@ def mock_population_all(N, relT, relM, relRobs, relA,
     """
     #np.random.seed(42)
     #print(Tmin)
-    _N = int(6.5*N)
+    _N = int(7.*N)
     # galactocentric radius of simulated exoplanets
     r_obs = spatial_sampling(_N)
     # Age
@@ -185,6 +185,114 @@ def mock_population_check(N, sigmaTobs, relM, relR, relA,
             Tobs_wn[pos][:N], np.ones(N)*sigmaTobs,                            
             mass_wn[pos][:N], relM*mass[pos][:N],                              
             ages_wn[pos][:N], relA*ages[pos][:N])  
+
+def mock_population_check_Asimov(N, sigmaTobs, relM, relR, relA,                       
+                          f_true, gamma_true, rs_true, rho0_true=0.42,          
+                          Tmin=0., v=None):                                     
+    """                                                                         
+    Generate N observed exoplanets                                              
+                                                                                
+    Assumptions                                                                 
+    -----------                                                                 
+    1) N observed exoplanets distributed according to E2 bulge + BR disc        
+    2) (All) exoplanets radius = Rjup                                           
+    3) BD evolution model taken from ATMO 2020                                  
+    4) BDs have masses chosen between 14-55 Mjup assuming power-law IMF and     
+       unifrom age distribution between 1-10 Gyr                                
+    """                                                                         
+    _N = int(6.5*N)                                                             
+    # galactocentric radius of simulated exoplanets                             
+    robs = spatial_sampling(_N)                                                 
+    # Age                                                                       
+    ages = np.random.uniform(1., 10., _N) # [yr] / [1-10 Gyr]                   
+    # Mass                                                                      
+    mass = IMF_sampling(-0.6, _N, Mmin=6, Mmax=75) # [Mjup]                     
+    mass = mass*M_jup.value/M_sun.value # [Msun]                                
+    # load theoretical BD cooling model - ATMO 2020                             
+    path   =  "/home/mariacst/exoplanets/running/data/"                         
+    data   = np.genfromtxt(path + "./ATMO_CEQ_vega_MIRI.txt", unpack=True)      
+    points = np.transpose(data[0:2, :])                                         
+    values = data[2]                                                            
+    xi     = np.transpose(np.asarray([ages, mass]))                             
+    # Intrinsic/internal temperature [K]                                        
+    Teff     = griddata(points, values, xi)                                     
+    #print(Teff)                                                                
+    # Observed velocity (internal heating + DM) [K]                             
+    Tobs = temperature_withDM(robs, Teff, M=mass*M_sun.value, f=f_true,         
+                              p=[gamma_true, rs_true, rho0_true], v=v)          
+    # add Gaussian noise                                                        
+    Tobs_wn = Tobs + np.random.normal(loc=0, scale=(sigmaTobs), size=_N)        
+    mass_wn = mass + np.random.normal(loc=0, scale=(relM*mass), size=_N)        
+    robs_wn = robs + np.random.normal(loc=0, scale=(relR*robs), size=_N)        
+    ages_wn = ages + np.random.normal(loc=0, scale=(relA*ages), size=_N)        
+    # select only those objects with masses between 14 & 55 Mjup and T > Tmin   
+    # actually from 16 - 52 Mjup not to cause problems w/ derivatives           
+    pos  = np.where((mass_wn > 0.015) & (mass_wn < 0.051) &                     
+                    (Tobs > Tmin) & (Tobs_wn > Tmin) &                          
+                    (robs_wn > 0.1) & (robs_wn < 1.) &                          
+                    (ages_wn > 1.002) & (ages_wn < 9.998))                      
+    if len(pos[0]) < N:                                                         
+        sys.exit("Less objects than required!")                                 
+    #return                                                                     
+    return (robs[pos][:N], relR*robs[pos][:N],                               
+            Tobs[pos][:N], np.ones(N)*sigmaTobs,                             
+            mass[pos][:N], relM*mass[pos][:N],                               
+            ages[pos][:N], relA*ages[pos][:N])  
+
+def mock_population_all_Asimov(N, relT, relM, relR, relA,                
+                          f_true, gamma_true, rs_true, rho0_true=0.42,          
+                          Tmin=0., v=None):                                     
+    """                                                                         
+    Generate N observed exoplanets                                              
+                                                                                
+    Assumptions                                                                 
+    -----------                                                                 
+    1) N observed exoplanets distributed according to E2 bulge + BR disc        
+    2) (All) exoplanets radius = Rjup                                           
+    3) BD evolution model taken from ATMO 2020                                  
+    4) BDs have masses chosen between 14-55 Mjup assuming power-law IMF and     
+       unifrom age distribution between 1-10 Gyr                                
+    """                                                                            
+    _N = int(7.*N)                                                                
+    # galactocentric radius of simulated exoplanets                             
+    robs = spatial_sampling(_N)                                                    
+    # Age                                                                       
+    ages = np.random.uniform(1., 10., _N) # [yr] / [1-10 Gyr]                   
+    # Mass                                                                      
+    mass = IMF_sampling(-0.6, _N, Mmin=6, Mmax=75) # [Mjup]                     
+    mass = mass*M_jup.value/M_sun.value # [Msun]                                
+    # load theoretical BD cooling model - ATMO 2020                             
+    path   =  "/home/mariacst/exoplanets/running/data/"                            
+    data   = np.genfromtxt(path + "./ATMO_CEQ_vega_MIRI.txt", unpack=True)         
+    points = np.transpose(data[0:2, :])                                            
+    values = data[2]                                                               
+    xi     = np.transpose(np.asarray([ages, mass]))                                
+    # Intrinsic/internal temperature [K]                                        
+    Teff     = griddata(points, values, xi)                                        
+    #print(Teff)                                                                
+    # Observed velocity (internal heating + DM) [K]                             
+    Tobs = temperature_withDM(robs, Teff, R=R_jup.value,                          
+                           M=mass*M_sun.value,                                     
+                           f=f_true, p=[gamma_true, rs_true, rho0_true],           
+                           v=v)
+    # add Gaussian noise                                                        
+    Tobs_wn = Tobs + np.random.normal(loc=0, scale=(relT*Tobs), size=_N)           
+    mass_wn = mass + np.random.normal(loc=0, scale=(relM*mass), size=_N)           
+    robs_wn = robs + np.random.normal(loc=0, scale=(relR*robs), size=_N)           
+    ages_wn = ages + np.random.normal(loc=0, scale=(relA*ages), size=_N)           
+    # select only those objects with masses between 14 & 55 Mjup and T > Tmin   
+    # actually from 16 - 52 Mjup not to cause problems w/ derivatives           
+    pos  = np.where((mass_wn > 0.015) & (mass_wn < 0.051) &                        
+                    (Tobs > Tmin) & (Tobs_wn > Tmin) &                             
+                    (robs_wn > 0.1) & (robs_wn < 1.) &                             
+                    (ages_wn > 1.002) & (ages_wn < 9.998))                         
+    if len(pos[0]) < N:                                                            
+        sys.exit("Less objects than required!")                                    
+    #return                                                                     
+    return (robs[pos][:N], relR*robs[pos][:N],                                     
+            Tobs[pos][:N], relT*Tobs[pos][:N],                                   
+            mass[pos][:N], relM*mass[pos][:N],                                     
+            ages[pos][:N], relA*ages[pos][:N])  
 
 def mock_population_all_fixed(N, Tobs, mass, r_obs, ages, sigma, Tmin=0.):    
     """                                                                       

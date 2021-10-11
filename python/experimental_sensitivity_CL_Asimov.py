@@ -4,145 +4,238 @@ sys.path.append("/home/mariacst/exoplanets/exoplanets/python/")
 import imp
 import mock_generation
 imp.reload(mock_generation)
-from mock_generation import mock_population_all
+from mock_generation import mock_population_all, mock_population_all_Asimov
 import numpy as np
 from scipy.interpolate import griddata
-from utils import heat, temperature_withDM, temperature
+from utils import T_DM, temperature_withDM
 from astropy.constants import R_jup, M_sun
 from scipy.stats import percentileofscore
+from derivatives import derivativeTint_wrt_M, derivativeTint_wrt_A
+from derivatives import derivativeTDM_wrt_M, derivativeTDM_wrt_r
+
+# Constant parameters & conversions ========================================== 
+conv_Msun_to_kg = 1.98841e+30 # [kg/Msun]                              
+# ============================================================================ 
+
+def sigma_Tmodel2(r, M, A, sigma_r, sigma_M, sigma_A, Tint, dervTint_M, 
+                  dervTint_A, f, params, v=None, R=R_jup.value, Rsun=8.178, 
+                  epsilon=1):               
+    """                                                                        
+    Return squared uncertainty in model temperature [UNITS??]                  
+                                                                               
+    Input:                                                                     
+        r : Galactocentric distance [kpc]                                      
+        M : mass [Msun]                                                        
+        A : age [Gyr]                                                          
+                                                                               
+    Assumption: uncertainties in age, mass and galactocentric distance         
+        are independent                                                        
+    """                                                                        
+    M_in_kg = M*conv_Msun_to_kg                                                
+                                                                               
+    _TDM = T_DM(r, R=R, M=M_in_kg, Rsun=Rsun, f=f, params=params, v=v,         
+                epsilon=epsilon)                                               
+    Ttot = np.power(_TDM**4 + Tint**4, 0.25)                                   
+                                                                               
+    dervT_M = ((Tint/Ttot)**3*dervTint_M +                                     
+               (_TDM/Ttot)**3*derivativeTDM_wrt_M(r, f, params, M, v=v, R=R,   
+                                                  Rsun=Rsun,epsilon=epsilon))  
+    # return                                                                   
+    return (np.power((Tint/Ttot)**3*dervTint_A*sigma_A, 2)+                    
+            np.power(dervT_M*sigma_M, 2)+                                      
+            np.power((_TDM/Ttot)**3*derivativeTDM_wrt_r(r, f, params, M, v=v,  
+                                  R=R, Rsun=Rsun, epsilon=epsilon)*sigma_r, 2))
 
 
-def lnL_sb(gamma, f, rs, Tobs, robs, Mobs, heat_int, rho0=0.42, v=None):
+def lnL_sb(gamma, f, rs, robs, sigma_robs, Mobs, sigma_Mobs, Aobs, sigma_Aobs,
+           Tobs, sigma_Tobs, Tint, dervTint_M, dervTint_A,
+           v=None, R=R_jup.value, Rsun=8.178, rho0=0.42, epsilon=1.):
     """
     Return ln(L) assuming predicted temperature = DM + intrinsic
     """  
     # Calculate predicted temperature (DM + intrinsic)
-    T = temperature_withDM(robs, heat_int, f=f, M=Mobs*M_sun.value, 
-                           parameters=[gamma, rs, rho0], v=v)
-    # return
-    return -0.5*np.sum(((T-Tobs)/(0.1*Tobs))**2.) 
+    Tmodel = temperature_withDM(robs, Tint, M=Mobs*conv_Msun_to_kg, f=f,
+                           p=[gamma, rs, rho0], v=v)
+    
+    _sigma_Tmodel2 = sigma_Tmodel2(robs, Mobs, Aobs, sigma_robs, sigma_Mobs,   
+                                   sigma_Aobs, Tint, dervTint_M, dervTint_A,   
+                                   f, [gamma, rs, rho0], v=v, R=R, Rsun=Rsun,  
+                                   epsilon=epsilon)                            
+    # return                                                                   
+    return -0.5*np.sum((Tmodel-Tobs)**2/(sigma_Tobs**2 + _sigma_Tmodel2)) 
 
-def lnL_b(Tobs, heat_int):
+
+def lnL_b(sigma_Mobs, sigma_Aobs, Tobs, sigma_Tobs, Tint, dervTint_M, 
+          dervTint_A):
     """
     Return ln(L) assuming predicted temperature = intrinsic
     """  
-    # Calculate predicted intrinsic temperature
-    T = temperature(heat_int, R_jup.value).value
+    
+    sigma_Tint2 = (np.power(dervTint_A*sigma_Aobs, 2) + 
+                   np.power(dervTint_M*sigma_Mobs, 2))
+    
     # return
-    return -0.5*np.sum(((T-Tobs)/(0.1*Tobs))**2.) 
+    return -0.5*np.sum((Tint-Tobs)**2/(sigma_Tobs**2 + sigma_Tint2)) 
 
-def TS(gamma, f, rs, Tobs, robs, Mobs, heat_int, rho0=0.42, v=None):
+
+def TS(gamma, f, rs, robs, sigma_robs, Mobs, sigma_Mobs, Aobs, sigma_Aobs,  
+       Tobs, sigma_Tobs, Tint, dervTint_M, dervTint_A,                         
+       v=None, R=R_jup.value, Rsun=8.178, rho0=0.42, epsilon=1.):
     """
     Test statistics
     """
     # return
-    return (-2.*lnL_sb(gamma, f, rs, Tobs, robs, Mobs, heat_int, rho0, v)
-            -2*lnL_b(Tobs, heat_int))
+    return (-2.*lnL_sb(gamma, f, rs, robs, sigma_robs, Mobs, sigma_Mobs, 
+                       Aobs, sigma_Aobs, Tobs, sigma_Tobs, Tint, dervTint_M, 
+                       dervTint_A, v=v, R=R, Rsun=Rsun, rho0=rho0, 
+                       epsilon=epsilon)
+            +2*lnL_b(sigma_Mobs, sigma_Aobs, Tobs, sigma_Tobs, Tint, 
+                     dervTint_M, dervTint_A)
+            )
 
-def p_value_sb(gamma_k, f, rs, nBDs, Tobs_R, robs_R, Mobs_R, heat_int_R, relT_R,
-               relM_R, relR_R, relA_R, steps=300):
-    """
-    Return p-value for gamma_k @ (f, rs) under s+b hypothesis
-    """
-    # Compute TS pdf
-    TS_k  = np.zeros(steps)
-    # Load ATMO2020 model
-    path   = "/home/mariacst/exoplanets/exoplanets/data/"
-    data   = np.genfromtxt(path + "./ATMO_CEQ_vega_MIRI.txt", unpack=True)
-    points = np.transpose(data[0:2, :])
-    values = data[2]
-    
-    for i in range(steps):
-        robs, Tobs, Mobs, ages = mock_population_all(nBDs, relT_R, relM_R, relR_R,
-                                                     relA_R, f, gamma_k, rs)
-        # Predicted intrinsic temperatures
-        xi       = np.transpose(np.asarray([ages, Mobs]))
-        Teff     = griddata(points, values, xi)
-        heat_int = heat(Teff, np.ones(len(Teff))*R_jup.value)
-        # TS
-        TS_k[i]  = TS(gamma_k, f, rs, Tobs, robs, Mobs, heat_int)
-    # observed TS
-    q_gamma_k_obs = TS(gamma_k, f, rs, Tobs_R, robs_R, Mobs_R, heat_int_R)
+def p_value_sb(gamma_k, f, rs, nBDs, relT, relM, relR, relA, points, values,    
+                   TS_obs, steps=300, Tmin=0., v=None, ex="fixedT10v100"):      
+    """                                                                         
+    Return p-value for gamma_k @ (f, rs) under s+b hypothesis                   
+    """                                                                         
+    # Compute TS pdf                                                            
+    TS_k = np.zeros(steps) 
+    path = "/home/mariacst/exoplanets/exoplanets/python/data_der/"
+    #path = "/home/mariacst/exoplanets/running/v100_N1e5/data_der/"
+    for i in range(steps):                                                      
+        # Generate experiments under s+b hypothesis  
+        np.random.seed(i+1)
+        (robs, sigmarobs, Tobs, sigmaTobs, Mobs, sigmaMobs, Aobs,               
+        sigmaAobs) = mock_population_all(nBDs, relT, relM, relR, relA, 
+                                           f, gamma_k, rs, Tmin=Tmin,v=v)     
+        # Predicted intrinsic temperatures                                         
+        xi       = np.transpose(np.asarray([Aobs, Mobs]))                       
+        Teff     = griddata(points, values, xi)                                 
+        # Load derivatives Tint wrt Age and Mass  
+        data = np.genfromtxt(path + "derivativeTint_" + ex + "_N%i_sigma%.1f_v%i.dat" 
+                     %(nBDs, relM, i+1), unpack=True) 
+        dervTint_A = data[0]                                              
+        dervTint_M = data[1]                                              
+        # TS                                                                    
+        TS_k[i] = TS(gamma_k, f, rs, robs, sigmarobs, Mobs, sigmaMobs, Aobs,    
+                     sigmaAobs, Tobs, sigmaTobs, Teff, dervTint_M, dervTint_A,  
+                     v=v)  
+    # return                                                                    
+    return 100-percentileofscore(TS_k, TS_obs, kind="strict") 
+
+def p_value_b(gamma_k, f, rs, nBDs, relT, relM, relR, relA, points, values,   
+              TS_obs, steps=300, v=None, ex="fixedT10v100"):                      
+    """                                                                         
+    Return p-value for gamma_k @ (f, rs) under b hypothesis                     
+    """                                                                         
+    # Compute TS pdf                                                            
+    TS_k = np.zeros(steps)
+    path = "/home/mariacst/exoplanets/exoplanets/python/data_der/" 
+    #path = "/home/mariacst/exoplanets/running/v100_N1e5/data_der/"
+    for i in range(steps): 
+        # Generate experiments under s+b hypothesis 
+        np.random.seed(i+1)
+        (robs, sigmarobs, Tobs, sigmaTobs, Mobs, sigmaMobs, Aobs,               
+        sigmaAobs) = mock_population_all(nBDs, relT, relM, relR, relA, 
+                                           0., 1., 1.)              
+        # Predicted intrinsic temperatures                                      
+        xi       = np.transpose(np.asarray([Aobs, Mobs]))                       
+        Teff     = griddata(points, values, xi)                                 
+        # Load derivatives Tint wrt Age and Mass                           
+        data = np.genfromtxt(path + "derivativeTint_" + ex + "_N%i_sigma%.1f_v%i.dat" 
+                     %(nBDs, relM, i+1), unpack=True)  
+        dervTint_A = data[0]                        
+        dervTint_M = data[1]                                              
+        # TS                                                                    
+        TS_k[i] = TS(gamma_k, f, rs, robs, sigmarobs, Mobs, sigmaMobs, Aobs,    
+                     sigmaAobs, Tobs, sigmaTobs, Teff, dervTint_M, dervTint_A, v=v)  
     # return
-    return (100-percentileofscore(TS_k, q_gamma_k_obs, kind="strict"))
+    return 100-percentileofscore(TS_k, TS_obs, kind="strict") 
 
-def p_value_b(gamma_k, f, rs, nBDs, Tobs_R, robs_R, Mobs_R, heat_int_R, relT_R,
-              relM_R, relR_R, relA_R, steps=300):
-    """                                                                        
-    Return p-value for gamma_k @ (f, rs) under b hypothesis
-    """                                                                        
-    # Compute TS pdf                                                           
-    TS_k  = np.zeros(steps)                                                    
-    # Load ATMO2020 model                                                      
-    path   = "/home/mariacst/exoplanets/exoplanets/data/"                      
-    data   = np.genfromtxt(path + "./ATMO_CEQ_vega_MIRI.txt", unpack=True)     
-    points = np.transpose(data[0:2, :])                                        
-    values = data[2]                                                           
-                                                                               
-    for i in range(steps):                                                     
-        # Generate experiments under s+b hypothesis
-        robs, Tobs, Mobs, ages = mock_population_all(nBDs, relT_R, relM_R, relR_R,
-                                         relA_R, 0., gamma_k, rs)              
-        # Predicted intrinsic temperatures
-        xi       = np.transpose(np.asarray([ages, Mobs]))
-        Teff     = griddata(points, values, xi)
-        heat_int = heat(Teff, np.ones(len(Teff))*R_jup.value)
-        # TS
-        TS_k[i] = TS(gamma_k, f, rs, Tobs, robs, Mobs, heat_int)
-    # observed TS
-    q_gamma_k_obs = TS(gamma_k, f, rs, Tobs_R, robs_R, Mobs_R, heat_int_R)
-    # return
-    return (100-percentileofscore(TS_k, q_gamma_k_obs, kind="strict"))
 
-def UL(rs, f, nBDs, relT_R, relM_R, relR_R, relA_R, steps=300):
-    # Generate "real" observation assuming only background (no DM)
-    rho0=0.42
-    # Load ATMO2020 model
-    path   = "/home/mariacst/exoplanets/exoplanets/data/"
-    data   = np.genfromtxt(path + "./ATMO_CEQ_vega_MIRI.txt", unpack=True)
-    points = np.transpose(data[0:2, :])
-    values = data[2]
-    robs_R, Tobs_R, mass_R, ages_R = mock_population_all(nBDs, 0., 0., 
-                                         0., 0.,
-                                         0, 1., 1., rho0_true=rho0, v=None)
-    xi         = np.transpose(np.asarray([ages_R, mass_R]))
-    Teff       = griddata(points, values, xi)
-    heat_int_R = heat(Teff, np.ones(len(Teff))*R_jup.value)
-
-    import pdb
-    pdb.set_trace()
-
-    gamma_up = np.ones(len(rs))*10
-    for i in range(len(rs)):
-        if rs[i] > 7.:
-            gamma_k = np.linspace(0.4, 2.9, 35) # change this?
-        else:
-            gamma_k  = np.linspace(0, 1.5, 35) # change this?
-        for g in gamma_k:
-            _p_sb = p_value_sb(g, f, rs[i], nBDs, Tobs_R, robs_R, mass_R, 
-                               heat_int_R, relT_R, relM_R, relR_R, relA_R, 
-                               steps=steps)
-            _p_b = p_value_b(g, f, rs[i], nBDs, Tobs_R, robs_R, mass_R, heat_int_R,
-                             relT_R, relM_R, relR_R, relA_R, steps=steps)
-            try:
-                CL = _p_sb / _p_b
-            except ZeroDivisionError:
-                CL = 200.
-            if CL < 0.05:
-                print(rs[i], g)
-                gamma_up[i] = g
-                break
+def UL_at_rs(rs, f, nBDs, relT, relM, relR, relA, points, values,
+             robs, sigmarobs, Mobs, sigmaMobs, Aobs, sigmaAobs, Tobs, 
+             sigmaTobs, Teff, dervTint_M, dervTint_A, 
+             steps=300, rho0=0.42, v=None, gamma_min=0.01, gamma_max=2.95):
+    # Grid in gamma
+    gamma_k = np.linspace(gamma_min, gamma_max, 30) # change this?             
+    for g in gamma_k:                                                          
+        # Observed TS                                                          
+        TS_obs = TS(g, f, rs, robs, sigmarobs, Mobs, sigmaMobs, Aobs,     
+                    sigmaAobs, Tobs, sigmaTobs, Teff, dervTint_M,              
+                    dervTint_A, v=v)                                
+        # s + b hypothesis                                                     
+        _p_sb = p_value_sb(g, f, rs, nBDs, relT, relM, relR, relA,          
+                           points, values, TS_obs, steps=steps, v=v)           
+        #b hypothesis                                                          
+        _p_b = p_value_b(g, f, rs, nBDs, relT, relM, relR, relA,            
+                         points, values, TS_obs, steps=steps, v=v)             
+        try:                                                                   
+            CL = _p_sb / _p_b                                                  
+        except ZeroDivisionError:                                              
+            CL = 200.                                                          
+        if CL < 0.05:                                                          
+            gamma_up = g                                                    
+            break   
     #return
     return gamma_up
 
-
 if __name__=="__main__":
-    np.random.seed(42) # ====== reproducable results
-    nBDs=100; relT_R=0.1; relM_R=0.1; relR_R=0.1; relA_R=0.1
-    f        = float(sys.argv[1])
-    steps    = int(sys.argv[2])
-    rs       = np.asarray([5., 10., 15., 20.])
-    gamma_up = UL(rs, f, nBDs, relT_R, relM_R, relR_R, relA_R, steps=steps)
-    # save results
-    np.savetxt("UL_f%.1f_Asimov42_steps%i.dat" %(f, steps), gamma_up, fmt="%.4f")
+    
+    f         = float(sys.argv[1])
+    nBDs      = 100
+    sigma     = 0.1
+    gamma_max = [float(sys.argv[4])]
 
+    rs        = [float(sys.argv[2])]#[2.5, 5., 7.5, 10, 12.5, 15, 17.5, 20, 22.5, 25, 30]
+    gamma_min = [float(sys.argv[3])]#[0.001, 0.001, 0.1, 0.2, 0.3, 0.3, 0.3, 0.4, 0.4, 0.4, 0.4]
+    steps     = 200 # Need to vary
+     
+    relT = 0.1;
+    ex   = "fixedT10v100"
+    v    = 100. # km/s
+    # Load ATMO2020 model                                                          
+    path     = "/home/mariacst/exoplanets/exoplanets/data/"                          
+    data     = np.genfromtxt(path + "./ATMO_CEQ_vega_MIRI.txt", unpack=True)         
+    points   = np.transpose(data[0:2, :])                                            
+    values   = data[2]
+    gamma_up = np.ones(len(rs))*10.
+    path = "/home/mariacst/exoplanets/exoplanets/python/data_der/"
+    #path = "/home/mariacst/exoplanets/running/v100_N1e5/data_der/"
+    # Generate real observation
+    seed      = 250
+    np.random.seed(seed)
+    (robs, sigmarobs, Tobs, sigmaTobs, Mobs,                                  
+        sigmaMobs, Aobs, sigmaAobs) = mock_population_all_Asimov(nBDs, relT, 
+                                      sigma, sigma, sigma, 0., 1., 1., 
+                                      Tmin=0., v=v)                        
+    xi   = np.transpose(np.asarray([Aobs, Mobs]))                               
+    Teff = griddata(points, values, xi)                                         
+    # Calculate derivatives Tint wrt Age and Mass                               
+    dervTint_A = np.ones(nBDs)                                                  
+    dervTint_M = np.ones(nBDs)                                                  
+    size       = 7000                                                           
+    h          = 0.001                                                          
+    for i in range(nBDs):                                                       
+        dervTint_A[i] = derivativeTint_wrt_A(Mobs[i], Aobs[i], points, values,  
+                                         size=size, h=h)                        
+        dervTint_M[i] = derivativeTint_wrt_M(Mobs[i], Aobs[i], points, values,  
+                                         size=size, h=h)                           
+
+    i = 0
+    for _rs in rs:
+        # UL
+        gamma_up[i] = UL_at_rs(_rs, f, nBDs, relT, sigma, sigma, sigma, points, 
+                               values, robs, sigmarobs, Mobs, sigmaMobs, Aobs,
+                               sigmaAobs, Tobs, sigmaTobs, Teff, dervTint_M,
+                               dervTint_A, steps=steps, v=v, 
+                               gamma_min=gamma_min[i], gamma_max=gamma_max[i])
+        print("%.1f  %.4f" %(_rs, gamma_up[i]))
+        i+=1
+
+    #print(gamma_up)
+    output = np.array((np.array(rs), gamma_up))
+    # save results
+    np.savetxt("UL_" + ex + "_nBDs%i_f%.1f_steps%i_sigma%.1f_rs%.1fAsimov.dat" 
+               %(nBDs, f, steps, sigma, _rs), 
+               output.T, fmt="%.4f  %.4f")
