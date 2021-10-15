@@ -67,13 +67,12 @@ def spatial_sampling(nBDs, phi=0., theta=np.pi/2., R0=8.178):
     # return 
     return r
 
-def IMF_sampling(alpha, size, Mmin=14, Mmax=55):
-    """
-    Sampling from power-law distribution
-    """
-    y = np.random.uniform(0, 1, size=size)
+def IMF_sampling(alpha, size, Mmin=14, Mmax=55):                                   
+    """                                                                            
+    Sampling from power-law distribution                                           
+    """                                                                            
+    y = np.random.uniform(0, 1, size=size)                                         
     return ((Mmax**(alpha+1) - Mmin**(alpha+1))*y + Mmin**(alpha+1))**(1./(alpha+1))
-
 
 def mock_population_all(N, relT, relM, relRobs, relA,
                         f_true, gamma_true, rs_true, rho0_true=0.42, 
@@ -121,7 +120,7 @@ def mock_population_all(N, relT, relM, relRobs, relA,
     ages_wn = ages + np.random.normal(loc=0, scale=(relA*ages), size=_N)
     # select only those objects with masses between 14 and 55 Mjup and T > Tmin
     pos  = np.where((mass_wn > 0.015) & (mass_wn < 0.051) & # 16 - 53 Mjup!
-                    (Tobs > Tmin) & (Tobs_wn > Tmin) &
+                    (Tobs > Tmin) &
                     (robs_wn > 0.1) & (robs_wn < 1.) & 
                     (ages_wn > 1.002) & (ages_wn < 9.998))
     #print("Tmin = ", Tmin, len(pos[0]))
@@ -175,7 +174,7 @@ def mock_population_check(N, sigmaTobs, relM, relR, relA,
     # select only those objects with masses between 14 & 55 Mjup and T > Tmin 
     # actually from 16 - 52 Mjup not to cause problems w/ derivatives
     pos  = np.where((mass_wn > 0.015) & (mass_wn < 0.051) & 
-                    (Tobs > Tmin) & (Tobs_wn > Tmin) &                         
+                    (Tobs > Tmin) &                        
                     (robs_wn > 0.1) & (robs_wn < 1.) &                         
                     (ages_wn > 1.002) & (ages_wn < 9.998))                     
     if len(pos[0]) < N:                                                        
@@ -228,7 +227,7 @@ def mock_population_check_Asimov(N, sigmaTobs, relM, relR, relA,
     # select only those objects with masses between 14 & 55 Mjup and T > Tmin   
     # actually from 16 - 52 Mjup not to cause problems w/ derivatives           
     pos  = np.where((mass_wn > 0.015) & (mass_wn < 0.051) &                     
-                    (Tobs > Tmin) & (Tobs_wn > Tmin) &                          
+                    (Tobs > Tmin) &                           
                     (robs_wn > 0.1) & (robs_wn < 1.) &                          
                     (ages_wn > 1.002) & (ages_wn < 9.998))                      
     if len(pos[0]) < N:                                                         
@@ -283,7 +282,7 @@ def mock_population_all_Asimov(N, relT, relM, relR, relA,
     # select only those objects with masses between 14 & 55 Mjup and T > Tmin   
     # actually from 16 - 52 Mjup not to cause problems w/ derivatives           
     pos  = np.where((mass_wn > 0.015) & (mass_wn < 0.051) &                        
-                    (Tobs > Tmin) & (Tobs_wn > Tmin) &                             
+                    (Tobs > Tmin) &                              
                     (robs_wn > 0.1) & (robs_wn < 1.) &                             
                     (ages_wn > 1.002) & (ages_wn < 9.998))                         
     if len(pos[0]) < N:                                                            
@@ -307,7 +306,7 @@ def mock_population_all_fixed(N, Tobs, mass, r_obs, ages, sigma, Tmin=0.):
     ages_wn = ages + np.random.normal(loc=0, scale=(sigma*ages), size=_N)           
     # select only those objects with masses between 14 and 55 Mjup and T > Tmin 
     pos  = np.where((mass_wn > 0.015) & (mass_wn < 0.051) & # 16 - 53 Mjup!        
-                    (Tobs > Tmin) & (Tobs_wn > Tmin) &                             
+                    (Tobs > Tmin) &                              
                     (robs_wn > 0.1) & (robs_wn < 1.) &                             
                     (ages_wn > 1.002) & (ages_wn < 9.998))                         
     #print("Tmin = ", Tmin, len(pos[0]))                                           
