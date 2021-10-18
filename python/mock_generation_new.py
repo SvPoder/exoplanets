@@ -95,17 +95,13 @@ def mock_population_all(N, relT, relM, relRobs, relA,
     #np.random.seed(42)
     #print(Tmin)
     _N = int(7.*N)
-
     # galactocentric radius of simulated exoplanets
     r_obs = spatial_sampling(_N)
-
     # Age
     ages = np.random.uniform(1., 10., _N) # [yr] / [1-10 Gyr]
-
     # Mass
     mass = IMF_sampling(-0.6, _N, Mmin=6, Mmax=75) # [Mjup]
     mass = mass*M_jup.value/M_sun.value # [Msun]
-
     # load theoretical BD cooling model - ATMO 2020
     path =  "/home/mariacst/exoplanets/running/data/"
     data = np.genfromtxt(path + "./ATMO_CEQ_vega_MIRI.txt", unpack=True)
@@ -114,22 +110,18 @@ def mock_population_all(N, relT, relM, relRobs, relA,
     xi = np.transpose(np.asarray([ages, mass]))
 
     Teff     = griddata(points, values, xi)
-
     # Observed velocity (internal heating + DM)
     Tobs = temperature_withDM(r_obs, Teff, R=R_jup.value, M=mass*M_sun.value, f=f_true, p=[gamma_true, rs_true, rho0_true], v=v)
-
     # add Gaussian noise
     Tobs_wn = Tobs + np.random.normal(loc=0, scale=(relT*Tobs), size=_N)
     mass_wn = mass + np.random.normal(loc=0, scale=(relM*mass), size=_N)
     robs_wn = r_obs + np.random.normal(loc=0, scale=(relRobs*r_obs), size=_N)
     ages_wn = ages + np.random.normal(loc=0, scale=(relA*ages), size=_N)
-
     # select only those objects with masses between 14 and 55 Mjup and T > Tmin
     pos  = np.where((mass_wn > 0.015) & (mass_wn < 0.051) & # 16 - 53 Mjup!
                     (Tobs > Tmin) & (Tobs_wn > Tmin) &
                     (robs_wn > 0.1) & (robs_wn < 1.) &
                     (ages_wn > 1.002) & (ages_wn < 9.998))
-
     #print("Tmin = ", Tmin, len(pos[0]))
     if len(pos[0]) < N:
         sys.exit("Less objects than required!")

@@ -14,14 +14,19 @@ conv_Msun_to_kg         = 1.98841e+30 # [kg/Msun]
 # ============================================================================ 
 
 def vc(Rsun, Rint, parameters):
-    data = np.genfromtxt("../data/rc_e2bulge_R08.178_J_corr.dat", unpack=True)
+
+    #data = np.genfromtxt("../data/rc_e2bulge_R08.178_J_corr.dat", unpack=True)
+    data = np.genfromtxt("/home/sven/repos/exoplanets/data/rc_e2bulge_R08.178_J_corr.dat", unpack=True)
     r = data[0]
     vB = data[1]
-    data = np.genfromtxt("../data/rc_hgdisc_R08.178_corr.dat", unpack=True)
+
+    #data = np.genfromtxt("../data/rc_hgdisc_R08.178_corr.dat", unpack=True)
+    data = np.genfromtxt("/home/sven/repos/exoplanets/data/rc_hgdisc_R08.178_corr.dat", unpack=True)
     vD = data[1]
     vDM = vgNFW(Rsun, r, parameters)
     vtot = np.sqrt(np.power(vB, 2) + np.power(vD, 2)+ np.power(vDM, 2))
     vtot_intp = interp1d(r, vtot)
+
     return vtot_intp(Rint)
 
 def vgNFW(Rsun, R, parameters):
