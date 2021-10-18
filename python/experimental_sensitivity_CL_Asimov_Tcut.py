@@ -94,7 +94,8 @@ def TS(gamma, f, rs, robs, sigma_robs, Mobs, sigma_Mobs, Aobs, sigma_Aobs,
             )
 
 def p_value_sb(gamma_k, f, rs, nBDs, relT, relM, relR, relA, points, values,    
-               TS_obs, steps=300, Tmin=0., v=None):      
+               TS_obs, steps=300, Tmin=0., v=None,
+               ex="fixedT10v100Tcut650_nocutTwn"):
     """                                                                         
     Return p-value for gamma_k @ (f, rs) under s+b hypothesis                   
     """                                                                         
@@ -109,21 +110,21 @@ def p_value_sb(gamma_k, f, rs, nBDs, relT, relM, relR, relA, points, values,
             np.random.seed(i)
             (robs, sigmarobs, Tobs, sigmaTobs, Mobs, sigmaMobs, Aobs,               
             sigmaAobs) = mock_population_all(nBDs, relT, relM, relR, relA, 
-                                           f, gamma_k, rs, Tmin=Tmin,v=v)     
-            # Predicted intrinsic temperatures                                         
-            xi       = np.transpose(np.asarray([Aobs, Mobs]))                       
-            Teff     = griddata(points, values, xi)                                 
-            # Calculate derivatives Tint wrt Age and Mass                                   
-            dervTint_A = np.ones(nBDs)                                                      
-            dervTint_M = np.ones(nBDs)                                                      
-            size       = 7000                                                               
-            h          = 0.001                                                              
-            for k in range(nBDs):                                                           
-                dervTint_A[k] = derivativeTint_wrt_A(Mobs[k], Aobs[k], points, values,      
+                                           f, gamma_k, rs, Tmin=Tmin, v=v)
+            # Predicted intrinsic temperatures                                
+            xi       = np.transpose(np.asarray([Aobs, Mobs]))                 
+            Teff     = griddata(points, values, xi)                           
+            # Calculate derivatives Tint wrt Age and Mass                     
+            dervTint_A = np.ones(nBDs)                                        
+            dervTint_M = np.ones(nBDs)                                        
+            size       = 7000                                                 
+            h          = 0.001                                                
+            for k in range(nBDs):                                             
+                dervTint_A[k] = derivativeTint_wrt_A(Mobs[k], Aobs[k], points, values,
                                          size=size, h=h)                        
-                dervTint_M[k] = derivativeTint_wrt_M(Mobs[k], Aobs[k], points, values,      
+                dervTint_M[k] = derivativeTint_wrt_M(Mobs[k], Aobs[k], points, values,
                                          size=size, h=h)
-            # TS                                                                    
+            # TS                                                              
             TS_k[i] = TS(gamma_k, f, rs, robs, sigmarobs, Mobs, sigmaMobs, Aobs,    
                      sigmaAobs, Tobs, sigmaTobs, Teff, dervTint_M, dervTint_A,  
                      v=v)  
@@ -134,7 +135,8 @@ def p_value_sb(gamma_k, f, rs, nBDs, relT, relM, relR, relA, points, values,
     return 100-percentileofscore(TS_k, TS_obs, kind="strict") 
 
 def p_value_b(gamma_k, f, rs, nBDs, relT, relM, relR, relA, points, values,   
-              TS_obs, steps=300, Tmin=0., v=None, ex="fixedT10v100Tcut650"):    
+              TS_obs, steps=300, Tmin=0., v=None, 
+              ex="fixedT10v100Tcut650_nocutTwn"):
     """                                                                         
     Return p-value for gamma_k @ (f, rs) under b hypothesis                     
     """                                                                         
@@ -160,9 +162,6 @@ def p_value_b(gamma_k, f, rs, nBDs, relT, relM, relR, relA, points, values,
         TS_k[i] = TS(gamma_k, f, rs, robs, sigmarobs, Mobs, sigmaMobs, Aobs,    
                      sigmaAobs, Tobs, sigmaTobs, Teff, dervTint_M, dervTint_A, v=v)  
         
-    #np.savetxt("TS_b_" + ex + "_nBDs%i_f%.1f_steps%i_sigma%.1f_gamma%.1frs%.1f.dat"
-    #           %(nBDs, f, steps, relM, gamma_k, rs),          
-    #           TS_k, fmt="%.4f ")   
     # return
     return 100-percentileofscore(TS_k, TS_obs, kind="strict") 
 
@@ -204,12 +203,12 @@ if __name__=="__main__":
 
     rs        = [float(sys.argv[2])]
     gamma_min = [float(sys.argv[3])]
-    steps     = 400 # Need to vary
-     
+    steps     = 200 # Need to vary
+
     relT = 0.1;
-    ex   = "fixedT10v100Tcut650"
+    ex   = "fixedT10v100Tcut650_nocutTwn"
     v    = 100. # km/s
-    Tcut = 650. # KI
+    Tcut = 650. # K
     # Load ATMO2020 model                                                          
     path     = "/home/mariacst/exoplanets/exoplanets/data/"                          
     data     = np.genfromtxt(path + "./ATMO_CEQ_vega_MIRI.txt", unpack=True)         
