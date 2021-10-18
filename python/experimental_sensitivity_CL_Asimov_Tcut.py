@@ -237,7 +237,7 @@ if __name__=="__main__":
     #f         = float(sys.argv[1])
     f         = 1
 
-    nBDs      = 100
+    nBDs      = 1000
     sigma     = 0.1
     #gamma_max = [float(sys.argv[4])]
     gamma_max = [1.4]
@@ -298,6 +298,7 @@ if __name__=="__main__":
     from functools import partial
 
 
+    # Change the number to desired CPU count
     with Pool(4) as p:
         results = p.map(partial(UL_at_rs,f = f,
                                          nBDs = nBDs,
