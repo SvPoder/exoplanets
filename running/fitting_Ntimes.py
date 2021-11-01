@@ -11,11 +11,11 @@ from mock_generation import mock_population_all
 from astropy.constants import R_jup, M_jup, G, sigma_sb
 import glob
 import pickle
-#import time
+import time
+
 #from emcee_functions import lnprob
 
 # Timing the script
-import time
 start = time.time()
 
 # Constant parameters & conversions ==========================================
@@ -43,11 +43,13 @@ points = np.transpose(data[0:2, :])
 values = data[2]
 
 # Mock observation
-np.random.seed(36)
+np.random.seed(rank)
 (robs, sigmarobs, Tobs, sigmaTobs, Mobs,
      sigmaMobs, Aobs, sigmaAobs) = mock_population_all(nBDs, relTobs, sigma,
                                       sigma, sigma, f_true, gamma_true,
                                       rs_true, rho0_true=rho0, v=v)
+
+
 
 # Calculate derivatives Tint wrt Age and Mass
 dervTint_A = np.ones(nBDs)
@@ -58,22 +60,20 @@ h          = 0.001
 # Path for 10^5 derivatives
 path_der = "/hdfs/local/mariacst/exoplanets/data_der/"
 
-steps = 200
-# for i in range(steps):
 
-#     # Load derivatives Tint wrt Age and Mass
-#     data = np.genfromtxt(path_der + "derivativeTint_" + ex + "_N%i_sigma%.1f_v%i.dat"
-#                     %(nBDs, sigma, i+1), unpack=True)
+# Load derivatives Tint wrt Age and Mass
+data = np.genfromtxt(path_der + "derivativeTint_" + ex + "_N%i_sigma%.1f_v%i.dat"
+                    %(nBDs, sigma, rank), unpack=True)
 
-#     dervTint_A = data[0]
-#     dervTint_M = data[1]
+dervTint_A = data[0]
+dervTint_M = data[1]
 
-
-for i in range(nBDs):
-    dervTint_A[i] = derivativeTint_wrt_A(Mobs[i], Aobs[i], points, values,
-                                         size=size, h=h)
-    dervTint_M[i] = derivativeTint_wrt_M(Mobs[i], Aobs[i], points, values,
-                                         size=size, h=h)
+# Uncomment to test the code
+# for i in range(nBDs):
+#     dervTint_A[i] = derivativeTint_wrt_A(Mobs[i], Aobs[i], points, values,
+#                                          size=size, h=h)
+#     dervTint_M[i] = derivativeTint_wrt_M(Mobs[i], Aobs[i], points, values,
+#                                          size=size, h=h)
 
 ## calculate predictic intrinsic temperature
 xi       = np.transpose(np.asarray([Aobs, Mobs]))
@@ -185,7 +185,7 @@ def residual(p):
     # unroll free parameters
     f, gamma, rs = p
 
-    _gNFW_rho = gNFW_rho(Rsun, R_jup.value, [gamma, rs, rho0])
+    _gNFW_rho = gNFW_rho(Rsun, robs, [gamma, rs, rho0])
 
     _TDM = T_DM_optimised(robs, R=R_jup.value, M=Mobs*conv_Msun_to_kg, Rsun=Rsun, f=f,
          params=[gamma, rs, rho0], v=v, epsilon=epsilon, gNFW_rho = _gNFW_rho)
@@ -213,6 +213,54 @@ def lnprob(p):
 
     # Return
     return lp + residual(p)
+
+
+
+## TESTING FOR BUGS REMOVE LATEr
+# from emcee_functions import residual as test_residual, lnprob as test_lnprob
+# p0 = [f_true, gamma_true, rs_true]
+
+# test_residual = test_residual(p0, robs, sigmarobs, Mobs, sigmaMobs, Aobs, sigmaAobs,
+#              Tobs, sigmaTobs, Teff, points, values, dervTint_M, dervTint_A,
+#              v, R_jup.value, Rsun, rho0, epsilon)
+# Tmodel_test = temperature_withDM(robs, Teff, M=Mobs*conv_Msun_to_kg, f=f_true,
+#                                 p=[gamma_true, rs_true, rho0], v=v)
+
+# TDM_test = T_DM(robs, R=R_jup.value, M=Mobs*conv_Msun_to_kg, Rsun=Rsun, f=f_true, params=[gamma_true, rs_true, rho0], v=v,
+#                 epsilon=epsilon)
+
+
+# _gNFW_rho = gNFW_rho(Rsun, robs, [gamma_true, rs_true, rho0])
+
+# print("gNFW_rho: {0}".format(_gNFW_rho[0]))
+
+# _TDM = T_DM_optimised(robs, R=R_jup.value, M=Mobs*conv_Msun_to_kg, Rsun=Rsun, f=f_true,
+#          params=[gamma_true, rs_true, rho0], v=v, epsilon=epsilon, gNFW_rho = _gNFW_rho)
+
+# # model temperature [K]
+# Tmodel = temperature_withDM_optimised(robs, Teff, M=Mobs*conv_Msun_to_kg, f=f_true,
+#                             p=[gamma_true, rs_true, rho0], v=v, TDM = _TDM)
+
+
+# lnprob_test = test_lnprob(p0, robs, sigmarobs, Mobs, sigmaMobs, Aobs, sigmaAobs,
+#            Tobs, sigmaTobs, Teff, points, values, dervTint_M, dervTint_A,
+#            v, R_jup.value, Rsun, rho0, epsilon)
+
+
+
+# print(robs[0])
+# print(lnprob_test)
+# print(lnprob(p0))
+
+# '''
+# Log
+# residual wrong
+# Tmodel wrong
+
+# '''
+# exit()
+
+#########################################################################################
 
 # import cProfile
 # def run_residual_profile():
@@ -262,15 +310,16 @@ with Pool(ncpu) as pool:
     pos, prob, state  = sampler.run_mcmc(pos, steps, progress=True)
 
     elapsed = time.time() - start
-    print("Emcee took " + str(elapsed))
+    print("Finished v{0} gamma: {1} rs: {2} Emcee took ".format(rank, gamma_true, rs_true) + str(elapsed))
 
 
 
 # Save likelihood
-_path = "/hdfs/local/mariacst/exoplanets/results/likelihood/velocity/v100/fixedT10/"
-_path = "/home/sven/repos/exoplanets/"
+#_path = "/hdfs/local/mariacst/exoplanets/results/likelihood/velocity/v100/fixedT10/"
+_path = "/hdfs/local/sven/exoplanets/sig%.1f/gamma%.1frs%.1f/"%(sigma, gamma_true, rs_true)
+#_path = "/home/sven/repos/exoplanets/"
 #filepath    = (_path + "N%isigma%.1fb/like_" %(nBDs, sigma) + ex)
-filepath = (_path + "/like_" + ex)
+filepath = (_path + "like_" + ex)
 file_object = open(filepath + ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"
                     %(nBDs, sigma, f_true, gamma_true, rs_true))
                     + "v" + str(rank), "wb")
@@ -278,10 +327,11 @@ pickle.dump(sampler.flatlnprobability, file_object, protocol=2)
 file_object.close()
 
 # Save posterior
-_path = "/hdfs/local/mariacst/exoplanets/results/posterior/velocity/v100/fixedT10/"
-_path = "/home/sven/repos/exoplanets/"
+#_path = "/hdfs/local/mariacst/exoplanets/results/posterior/velocity/v100/fixedT10/"
+#_path = "/hdfs/local/sven/exoplanets/"
+#_path = "/home/sven/repos/exoplanets/"
 #filepath    = (_path + "N%isigma%.1fb/posterior_" %(nBDs, sigma) + ex)
-filepath = (_path + "/posterior_" + ex)
+filepath = (_path + "posterior_" + ex)
 file_object2 = open(filepath + ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"
                     %(nBDs, sigma, f_true, gamma_true, rs_true))
                     + "v" + str(rank), "wb")

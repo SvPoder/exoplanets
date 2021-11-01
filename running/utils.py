@@ -89,6 +89,7 @@ def T_DM(r, R=R_jup.value, M=M_jup.value, Rsun=8.178, f=1.,
 
     _vDM   =  np.sqrt(8./(3*np.pi))*_vD # km/s
     _rhoDM = gNFW_rho(Rsun, r, params) # GeV/cm3
+
     # return
     return np.power((f*_rhoDM*_vDM*(1+3./2.*np.power(vesc/_vD, 2))*
                     conversion_into_w)/(4*_sigma_sb*epsilon), 1./4.)

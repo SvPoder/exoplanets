@@ -1,28 +1,34 @@
 #!/bin/bash
+#set -x #print out all commands before executing
+#set -e #abort bash script on error
+#SBATCH --job-name=BD_sig0.3
+#SBATCH --time=2-00:00:00
+#SBATCH --partition=main
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=6
+#SBATCH -e /home/sven/repos/exoplanets/logs/slurm_run_sig0.3/error_BD100_%A_%a.log
+#SBATCH -o /home/sven/repos/exoplanets/logs/slurm_run_sig0.3/output_BD100_%A_%a.log
 #SBATCH --array=1-100
 
-source /home/mariacst/exoplanets/running/.env/bin/activate
+source /home/sven/exoplanetenv/bin/activate
+
+env
 
 ex=fixedT10v100
-N=100
-sigma=0.1
-sigma2=0.2
+N=100000
+sigma=0.3
 
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 0.6 5. $SLURM_JOB_ID
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 0.7 5. $SLURM_JOB_ID
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 0.8 5. $SLURM_JOB_ID
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 0.9 5. $SLURM_JOB_ID
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 0.6 10. $SLURM_JOB_ID
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 0.7 10. $SLURM_JOB_ID
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 0.8 10. $SLURM_JOB_ID
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 0.9 10. $SLURM_JOB_ID
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 0.6 20. $SLURM_JOB_ID
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 0.7 20. $SLURM_JOB_ID
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 0.8 20. $SLURM_JOB_ID
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 0.9 20. $SLURM_JOB_ID
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma2 0.6 5. $SLURM_JOB_ID
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma2 0.7 5. $SLURM_JOB_ID
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma2 0.8 5. $SLURM_JOB_ID
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma2 0.9 5. $SLURM_JOB_ID
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma2 0.6 10. $SLURM_JOB_ID
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma2 0.7 10. $SLURM_JOB_ID
+python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 1.3 20.
+echo "Finished script 1."
+
+python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 1.4 20.
+echo "Finished script 2."
+
+python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 1.5 20.
+echo "Finished script 3."
+
+
+
+
+
+
