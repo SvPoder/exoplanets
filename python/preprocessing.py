@@ -140,7 +140,7 @@ def statistics(filepath, filepath2, ex, nBDs, rel_unc, f, gamma, rs,
     #hpd_1sigma = np.array(hpd_1sigma)    
     #print(hpd_1sigma.shape)
 
-    filepath = "/home/mariacst/exoplanets/results/velocity/v100/priorsRC/statistics_"
+    filepath = "/home/mariacst/exoplanets/results/velocity/v100/priorsRC/more_steps/statistics_"
     output = open(filepath + ex + ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f" 
                               %(nBDs, rel_unc, f, gamma, rs)), "w")
     for i in range(rank):
@@ -174,7 +174,7 @@ def statistics(filepath, filepath2, ex, nBDs, rel_unc, f, gamma, rs,
 
 if __name__ == '__main__':
     _path     = "/hdfs/local/mariacst/exoplanets/results/"
-    _path_f   = "velocity/v100/priorsRC/"
+    _path_f   = "velocity/v100/priorsRC/more_steps/"
     filepath  = _path + "posterior/" + _path_f
     filepath2 = _path + "likelihood/" + _path_f
     ex        = "priorsRC"
