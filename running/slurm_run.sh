@@ -18,14 +18,14 @@ ex=fixedT10v100
 N=100000
 sigma=0.3
 
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 1.3 20.
+python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 1.3 5.
 echo "Finished script 1."
 
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 1.4 20.
-echo "Finished script 2."
+# sigma=0.2
+# python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 1.3 5.
+# echo "Finished script 2."
 
-python3.6 fitting_Ntimes.py $ex $SLURM_ARRAY_TASK_ID $N $sigma 1.5 20.
-echo "Finished script 3."
+
 
 
 
