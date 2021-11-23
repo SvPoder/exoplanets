@@ -291,6 +291,12 @@ print(nwalkers)
 # first guess
 p0 = [[0.9, 0.9, 20.] + 1e-4*np.random.randn(ndim) for j in range(nwalkers)]
 
+# Backend support
+backend_file = "/scratch/sven/exoplanet_emcee_logs/emcee_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"%(nBDs, sigma, f_true, gamma_true, rs_true)+ "v" + str(rank) + ".h5"
+backend = emcee.backends.HDFBackend(backend_file)
+backend.reset(nwalkers, ndim)
+# -------------------------------------------------------------------------
+
 with Pool(ncpu) as pool:
 
     # sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, pool = pool,
@@ -298,7 +304,7 @@ with Pool(ncpu) as pool:
     #                     sigmaTobs, Teff, points, values, dervTint_M, dervTint_A,
     #                     v, R_jup.value, Rsun, rho0, epsilon))
 
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, pool = pool)
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, pool = pool, backend=backend)
 
     print("Starting emcee")
     start = time.time()
@@ -312,7 +318,7 @@ with Pool(ncpu) as pool:
     elapsed = time.time() - start
     print("Finished v{0} gamma: {1} rs: {2} Emcee took ".format(rank, gamma_true, rs_true) + str(elapsed))
 
-
+exit()
 
 # Save likelihood
 #_path = "/hdfs/local/mariacst/exoplanets/results/likelihood/velocity/v100/fixedT10/"
