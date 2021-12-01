@@ -1,5 +1,6 @@
 import sys
 sys.path.append("/home/mariacst/exoplanets/running/.env/lib/python3.6/site-packages")
+sys.path.append("/home/sven/exoplanetenv/lib/python3.6/site-packages")
 import emcee
 import numpy as np
 from scipy.interpolate import griddata
