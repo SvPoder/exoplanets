@@ -152,9 +152,6 @@ def sigma_Tmodel2(r, M, A, sigma_r, sigma_M, sigma_A,
     _TDM = TDM
     Ttot = np.power(_TDM**4 + Tint**4, 0.25)
 
-    ###########################################################################
-    # DELETE THIS IF DOESNT WORK <-- Shaves about 0,5 sec on each iteration
-
     TintDivTtot = (Tint/Ttot)**3
     TDMDivTtot = (_TDM/Ttot)**3
 
@@ -167,17 +164,6 @@ def sigma_Tmodel2(r, M, A, sigma_r, sigma_M, sigma_A,
             np.power(TDMDivTtot*derivativeTDM_wrt_r_emcee(r, f, params, M, v=v,
                                   R=R, Rsun=Rsun, epsilon=epsilon, gNFW_rho=gNFW_rho)*sigma_r, 2))
 
-
-    ###########################################################################
-
-    # dervT_M = ((Tint/Ttot)**3*dervTint_M +
-    #            (_TDM/Ttot)**3*derivativeTDM_wrt_M_emcee(r, f, params, M, v=v, R=R,
-    #                                               Rsun=Rsun,epsilon=epsilon, gNFW_rho=gNFW_rho))
-    # # return
-    # return (np.power((Tint/Ttot)**3*dervTint_A*sigma_A, 2)+
-    #         np.power(dervT_M*sigma_M, 2)+
-    #         np.power((_TDM/Ttot)**3*derivativeTDM_wrt_r_emcee(r, f, params, M, v=v,
-    #                               R=R, Rsun=Rsun, epsilon=epsilon, gNFW_rho=gNFW_rho)*sigma_r, 2))
 
 def residual(p):
     """
@@ -217,68 +203,6 @@ def lnprob(p):
 
 
 
-## TESTING FOR BUGS REMOVE LATEr
-# from emcee_functions import residual as test_residual, lnprob as test_lnprob
-# p0 = [f_true, gamma_true, rs_true]
-
-# test_residual = test_residual(p0, robs, sigmarobs, Mobs, sigmaMobs, Aobs, sigmaAobs,
-#              Tobs, sigmaTobs, Teff, points, values, dervTint_M, dervTint_A,
-#              v, R_jup.value, Rsun, rho0, epsilon)
-# Tmodel_test = temperature_withDM(robs, Teff, M=Mobs*conv_Msun_to_kg, f=f_true,
-#                                 p=[gamma_true, rs_true, rho0], v=v)
-
-# TDM_test = T_DM(robs, R=R_jup.value, M=Mobs*conv_Msun_to_kg, Rsun=Rsun, f=f_true, params=[gamma_true, rs_true, rho0], v=v,
-#                 epsilon=epsilon)
-
-
-# _gNFW_rho = gNFW_rho(Rsun, robs, [gamma_true, rs_true, rho0])
-
-# print("gNFW_rho: {0}".format(_gNFW_rho[0]))
-
-# _TDM = T_DM_optimised(robs, R=R_jup.value, M=Mobs*conv_Msun_to_kg, Rsun=Rsun, f=f_true,
-#          params=[gamma_true, rs_true, rho0], v=v, epsilon=epsilon, gNFW_rho = _gNFW_rho)
-
-# # model temperature [K]
-# Tmodel = temperature_withDM_optimised(robs, Teff, M=Mobs*conv_Msun_to_kg, f=f_true,
-#                             p=[gamma_true, rs_true, rho0], v=v, TDM = _TDM)
-
-
-# lnprob_test = test_lnprob(p0, robs, sigmarobs, Mobs, sigmaMobs, Aobs, sigmaAobs,
-#            Tobs, sigmaTobs, Teff, points, values, dervTint_M, dervTint_A,
-#            v, R_jup.value, Rsun, rho0, epsilon)
-
-
-
-# print(robs[0])
-# print(lnprob_test)
-# print(lnprob(p0))
-
-# '''
-# Log
-# residual wrong
-# Tmodel wrong
-
-# '''
-# exit()
-
-#########################################################################################
-
-# import cProfile
-# def run_residual_profile():
-
-#     ndim     = 3
-#     nwalkers = 150
-#     p0 = [[0.9, 0.9, 20.] + 1e-4*np.random.randn(ndim) for j in range(nwalkers)]
-#     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob)
-
-#     pos, prob, state  = sampler.run_mcmc(p0, 10, progress=True)
-
-#     print(pos)
-
-
-# cProfile.run('run_residual_profile()')
-
-
 # ------------------ RECONSTRUCTION --------------------------------------
 from multiprocessing import Pool
 from multiprocessing import cpu_count
@@ -293,24 +217,19 @@ print(nwalkers)
 p0 = [[0.9, 0.9, 20.] + 1e-4*np.random.randn(ndim) for j in range(nwalkers)]
 
 # Backend support
-backend_file = "/scratch/sven/exoplanet_emcee_logs/emcee_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"%(nBDs, sigma, f_true, gamma_true, rs_true)+ "v" + str(rank) + ".h5"
+backend_file = "/scratch/sven/exoplanet_emcee_logs/ver2_emcee_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"%(nBDs, sigma, f_true, gamma_true, rs_true)+ "v" + str(rank) + ".h5"
 backend = emcee.backends.HDFBackend(backend_file)
 backend.reset(nwalkers, ndim)
 # -------------------------------------------------------------------------
 
 with Pool(ncpu) as pool:
 
-    # sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, pool = pool,
-    #             args=(robs, sigmarobs, Mobs, sigmaMobs, Aobs, sigmaAobs, Tobs,
-    #                     sigmaTobs, Teff, points, values, dervTint_M, dervTint_A,
-    #                     v, R_jup.value, Rsun, rho0, epsilon))
-
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, pool = pool, backend=backend)
 
     print("Starting emcee")
     start = time.time()
 
-    steps = 6000
+    steps = 8000
     pos, prob, state  = sampler.run_mcmc(p0, 200, progress=False)
 
     sampler.reset()
