@@ -201,8 +201,6 @@ def lnprob(p):
     # Return
     return lp + residual(p)
 
-
-
 # ------------------ RECONSTRUCTION --------------------------------------
 from multiprocessing import Pool
 from multiprocessing import cpu_count
@@ -216,10 +214,11 @@ print(nwalkers)
 # first guess
 p0 = [[0.9, 0.9, 20.] + 1e-4*np.random.randn(ndim) for j in range(nwalkers)]
 
-# Backend support
-backend_file = "/scratch/sven/exoplanet_emcee_logs/ver2_emcee_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"%(nBDs, sigma, f_true, gamma_true, rs_true)+ "v" + str(rank) + ".h5"
+# Backend support - Currently still not working through slurm
+backend_file = "/scratch/sven/exoplanet_emcee_logs/emcee_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"%(nBDs, sigma, f_true, gamma_true, rs_true)+ "v" + str(rank) + ".h5"
 backend = emcee.backends.HDFBackend(backend_file)
 backend.reset(nwalkers, ndim)
+
 # -------------------------------------------------------------------------
 
 with Pool(ncpu) as pool:
@@ -229,38 +228,36 @@ with Pool(ncpu) as pool:
     print("Starting emcee")
     start = time.time()
 
-    steps = 8000
+    steps = 6000
     pos, prob, state  = sampler.run_mcmc(p0, 200, progress=False)
 
     sampler.reset()
-    pos, prob, state  = sampler.run_mcmc(pos, steps, progress=True)
+    pos, prob, state  = sampler.run_mcmc(p0, steps, progress=True)
 
     elapsed = time.time() - start
     print("Finished v{0} gamma: {1} rs: {2} Emcee took ".format(rank, gamma_true, rs_true) + str(elapsed))
 
-exit()
 
 # Save likelihood
-#_path = "/hdfs/local/mariacst/exoplanets/results/likelihood/velocity/v100/fixedT10/"
+
 _path = "/hdfs/local/sven/exoplanets/sig%.1f/gamma%.1frs%.1f/"%(sigma, gamma_true, rs_true)
-#_path = "/home/sven/repos/exoplanets/"
-#filepath    = (_path + "N%isigma%.1fb/like_" %(nBDs, sigma) + ex)
 filepath = (_path + "like_" + ex)
+
 file_object = open(filepath + ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"
                     %(nBDs, sigma, f_true, gamma_true, rs_true))
                     + "v" + str(rank), "wb")
+
 pickle.dump(sampler.flatlnprobability, file_object, protocol=2)
 file_object.close()
 
 # Save posterior
-#_path = "/hdfs/local/mariacst/exoplanets/results/posterior/velocity/v100/fixedT10/"
-#_path = "/hdfs/local/sven/exoplanets/"
-#_path = "/home/sven/repos/exoplanets/"
-#filepath    = (_path + "N%isigma%.1fb/posterior_" %(nBDs, sigma) + ex)
+
 filepath = (_path + "posterior_" + ex)
+
 file_object2 = open(filepath + ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"
                     %(nBDs, sigma, f_true, gamma_true, rs_true))
                     + "v" + str(rank), "wb")
+
 pickle.dump(sampler.flatchain, file_object2, protocol=2)
 file_object2.close()
 
