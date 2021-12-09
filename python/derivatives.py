@@ -90,7 +90,8 @@ def derivativeTint_wrt_A(M, A, points, values, size=7000, h=0.001):
     xi     = np.transpose(np.asarray([ages, mass]))
     Teff   = griddata(points, values, xi)
     # return
-    return derivative(interp1d(ages, Teff), A, dx=h)
+    return derivative(interp1d(ages, Teff, bounds_error=False, fill_value="extrapolate"), 
+                      A, dx=h)
 
 def derivativeTint_wrt_M(M, A, points, values, size=7000, h=0.001):
     """
@@ -106,7 +107,8 @@ def derivativeTint_wrt_M(M, A, points, values, size=7000, h=0.001):
     xi     = np.transpose(np.asarray([ages, mass]))
     Teff   = griddata(points, values, xi)
     # return
-    return derivative(interp1d(mass, Teff), M, dx=h)
+    return derivative(interp1d(mass, Teff, bounds_error=False, fill_value="extrapolate"), 
+                      M, dx=h)
 
 
 def derivativeT_wrt_M(r, M, A, Tint, TDM, points, values, f, params,

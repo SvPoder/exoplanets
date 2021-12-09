@@ -4,7 +4,7 @@ sys.path.append("/home/mariacst/exoplanets/exoplanets/python/")
 import imp
 import mock_generation
 imp.reload(mock_generation)
-from mock_generation import mock_population_check
+from mock_generation import mock_population_all
 import numpy as np
 from scipy.interpolate import griddata
 from utils import T_DM, temperature_withDM
@@ -94,27 +94,26 @@ def TS(gamma, f, rs, robs, sigma_robs, Mobs, sigma_Mobs, Aobs, sigma_Aobs,
             )
 
 def p_value_sb(gamma_k, f, rs, nBDs, relT, relM, relR, relA, points, values,    
-                   TS_obs, steps=300, Tmin=0., v=None):                             
+                   TS_obs, steps=300, Tmin=0., v=None, ex="fixedT10v100"):      
     """                                                                         
     Return p-value for gamma_k @ (f, rs) under s+b hypothesis                   
     """                                                                         
     # Compute TS pdf                                                            
     TS_k = np.zeros(steps) 
     path = "/home/mariacst/exoplanets/exoplanets/python/data_der/"
-    ex   = "fixedT100K"
+    #path = "/home/mariacst/exoplanets/running/v100_N1e5/data_der/"
     for i in range(steps):                                                      
-        sigmaTobs = 100. # K
         # Generate experiments under s+b hypothesis  
-        np.random.seed(i)
+        np.random.seed(i+1)
         (robs, sigmarobs, Tobs, sigmaTobs, Mobs, sigmaMobs, Aobs,               
-        sigmaAobs) = mock_population_check(nBDs, sigmaTobs, relM, relR, relA, 
+        sigmaAobs) = mock_population_all(nBDs, relT, relM, relR, relA, 
                                            f, gamma_k, rs, Tmin=Tmin,v=v)     
         # Predicted intrinsic temperatures                                         
         xi       = np.transpose(np.asarray([Aobs, Mobs]))                       
         Teff     = griddata(points, values, xi)                                 
         # Load derivatives Tint wrt Age and Mass  
         data = np.genfromtxt(path + "derivativeTint_" + ex + "_N%i_sigma%.1f_v%i.dat" 
-                     %(nBDs, relM, i), unpack=True) 
+                     %(nBDs, relM, i+1), unpack=True) 
         dervTint_A = data[0]                                              
         dervTint_M = data[1]                                              
         # TS                                                                    
@@ -125,27 +124,26 @@ def p_value_sb(gamma_k, f, rs, nBDs, relT, relM, relR, relA, points, values,
     return 100-percentileofscore(TS_k, TS_obs, kind="strict") 
 
 def p_value_b(gamma_k, f, rs, nBDs, relT, relM, relR, relA, points, values,   
-              TS_obs, steps=300, v=None):                                     
+              TS_obs, steps=300, v=None, ex="fixedT10v100"):                      
     """                                                                         
     Return p-value for gamma_k @ (f, rs) under b hypothesis                     
     """                                                                         
     # Compute TS pdf                                                            
     TS_k = np.zeros(steps)
     path = "/home/mariacst/exoplanets/exoplanets/python/data_der/" 
-    ex   = "fixedT100K"
+    #path = "/home/mariacst/exoplanets/running/v100_N1e5/data_der/"
     for i in range(steps): 
-        sigmaTobs = 100. # K 
         # Generate experiments under s+b hypothesis 
-        np.random.seed(i)
+        np.random.seed(i+1)
         (robs, sigmarobs, Tobs, sigmaTobs, Mobs, sigmaMobs, Aobs,               
-        sigmaAobs) = mock_population_check(nBDs, sigmaTobs, relM, relR, relA, 
+        sigmaAobs) = mock_population_all(nBDs, relT, relM, relR, relA, 
                                            0., 1., 1.)              
         # Predicted intrinsic temperatures                                      
         xi       = np.transpose(np.asarray([Aobs, Mobs]))                       
         Teff     = griddata(points, values, xi)                                 
         # Load derivatives Tint wrt Age and Mass                           
         data = np.genfromtxt(path + "derivativeTint_" + ex + "_N%i_sigma%.1f_v%i.dat" 
-                     %(nBDs, relM, i), unpack=True)  
+                     %(nBDs, relM, i+1), unpack=True)  
         dervTint_A = data[0]                        
         dervTint_M = data[1]                                              
         # TS                                                                    
@@ -183,45 +181,55 @@ def UL_at_rs(rs, f, nBDs, relT, relM, relR, relA, points, values,
     return gamma_up
 
 if __name__=="__main__":
-    f         = 1.
-    rs        = float(sys.argv[1])
-    gamma_min = float(sys.argv[2])
-    ite       = 50 # Need to vary
-    steps     = 200 # Need to vary
+    
+    f         = 1.#float(sys.argv[1])
+    nBDs      = 100
+    sigma     = 0.1
+    gamma_max = 1.1#float(sys.argv[4])
 
-    nBDs=100; relT=0.10; relM=0.10; relR=0.10; relA=0.10
-    ex = "fixedT100K"
+    rs        = float(sys.argv[2])
+    gamma_min = 0.01#[0.001, 0.001, 0.1, 0.2, 0.3, 0.3, 0.3, 0.4, 0.4, 0.4, 0.4]
+    steps     = 200 # Need to vary
+     
+    relT = 0.1;
+    ex   = "fixedT10v100"
+    v    = 100. # km/s
     # Load ATMO2020 model                                                          
     path     = "/home/mariacst/exoplanets/exoplanets/data/"                          
     data     = np.genfromtxt(path + "./ATMO_CEQ_vega_MIRI.txt", unpack=True)         
     points   = np.transpose(data[0:2, :])                                            
     values   = data[2]
-    gamma_up = np.ones(ite)*10.
     path = "/home/mariacst/exoplanets/exoplanets/python/data_der/"
+
+    ite  = 50
+    rank = int(sys.argv[1])
+    gamma_up = np.ones(ite)*10.
+
     for i in range(ite):
+        seed = 500 + rank*50 + i
         # Generate real observation
-        sigmaTobs = 100. # K
-        seed      = i + 350                                                        
         np.random.seed(seed)
-        (robs, sigmarobs, Tobs, sigmaTobs, Mobs,                                       
-        sigmaMobs, Aobs, sigmaAobs) = mock_population_check(nBDs, sigmaTobs, relM, 
-                                      relR, relA, 0., 1., 1., Tmin=0., v=100.)        
-        xi   = np.transpose(np.asarray([Aobs, Mobs]))                                  
-        Teff = griddata(points, values, xi)                                            
-        # Load derivatives Tint wrt Age and Mass  
+        (robs, sigmarobs, Tobs, sigmaTobs, Mobs,                                  
+        sigmaMobs, Aobs, sigmaAobs) = mock_population_all(nBDs, relT, 
+                                      sigma, sigma, sigma, 0., 1., 1., 
+                                      Tmin=0., v=v)                        
+        xi   = np.transpose(np.asarray([Aobs, Mobs]))                               
+        Teff = griddata(points, values, xi)                                         
+        # Load derivatives Tint wrt Age and Mass                                   
         data = np.genfromtxt(path + "derivativeTint_" + ex + "_N%i_sigma%.1f_v%i.dat" 
-                     %(nBDs, relM, seed), unpack=True) 
-        dervTint_A = data[0]                                              
+                     %(nBDs, sigma, seed), unpack=True)                        
+        dervTint_A = data[0]                                                   
         dervTint_M = data[1]  
+        
         # UL
-        gamma_up[i] = UL_at_rs(rs, f, nBDs, relT, relM, relR, relA, points, 
+        gamma_up[i] = UL_at_rs(rs, f, nBDs, relT, sigma, sigma, sigma, points, 
                                values, robs, sigmarobs, Mobs, sigmaMobs, Aobs,
                                sigmaAobs, Tobs, sigmaTobs, Teff, dervTint_M,
-                               dervTint_A, steps=steps, v=100., 
-                               gamma_min=gamma_min, gamma_max=2.7)
-        print("%i  %.4f" %(i, gamma_up[i]))
+                               dervTint_A, steps=steps, v=v, 
+                               gamma_min=gamma_min, gamma_max=gamma_max)
+        print("%.1f  %.4f" %(rs, gamma_up[i]))
 
-    #print(gamma_up)
     # save results
-    np.savetxt("UL_f%.1f_rs%.1f_steps%i.dat" %(f, rs, steps), gamma_up, 
-               fmt="%.4f")
+    np.savetxt("UL_" + ex + "_nBDs%i_f%.1f_steps%i_sigma%.1f_rs%.1fv%i.dat" 
+               %(nBDs, f, steps, sigma, rs, rank), 
+               gamma_up, fmt="%.4f")

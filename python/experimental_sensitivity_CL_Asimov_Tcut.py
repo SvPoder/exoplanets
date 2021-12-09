@@ -197,7 +197,7 @@ def UL_at_rs(rs, f, nBDs, relT, relM, relR, relA, points, values,
 
 if __name__=="__main__":
     f         = float(sys.argv[1])
-    nBDs      = 100
+    nBDs      = 1000
     sigma     = 0.1
     gamma_max = [float(sys.argv[4])]
 
@@ -224,6 +224,7 @@ if __name__=="__main__":
         sigmaMobs, Aobs, sigmaAobs) = mock_population_all_Asimov(nBDs, relT, 
                                       sigma, sigma, sigma, 0., 1., 1., 
                                       Tmin=Tcut, v=v)
+    print("asimov obs ready!")
     xi   = np.transpose(np.asarray([Aobs, Mobs]))                               
     Teff = griddata(points, values, xi)                                         
     # Calculate derivatives Tint wrt Age and Mass                               

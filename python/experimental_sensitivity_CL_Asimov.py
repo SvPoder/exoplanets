@@ -183,14 +183,14 @@ def UL_at_rs(rs, f, nBDs, relT, relM, relR, relA, points, values,
 if __name__=="__main__":
     
     f         = float(sys.argv[1])
-    nBDs      = 100
+    nBDs      = 10
     sigma     = 0.1
-    gamma_max = [float(sys.argv[4])]
+    gamma_max = [1.5, 1.5, 1.5, 1.9, 1.9, 1.9, 1.9, 1.9, 1.9, 1.9, 1.9]
 
-    rs        = [float(sys.argv[2])]#[2.5, 5., 7.5, 10, 12.5, 15, 17.5, 20, 22.5, 25, 30]
-    gamma_min = [float(sys.argv[3])]#[0.001, 0.001, 0.1, 0.2, 0.3, 0.3, 0.3, 0.4, 0.4, 0.4, 0.4]
+    rs        = [2.5, 5., 7.5, 10, 12.5, 15, 17.5, 20, 22.5, 25, 30]
+    gamma_min = [0.1, 0.1, 0.2, 0.3, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5]
     steps     = 200 # Need to vary
-     
+    
     relT = 0.1;
     ex   = "fixedT10v100"
     v    = 100. # km/s
