@@ -12,7 +12,7 @@ conversion_into_w       = 0.16021766
 conv_Msun_to_kg         = 1.98841e+30 # [kg/Msun]
 # ============================================================================
 
-def derivativeTDM_wrt_M(r, f, params, M, v=None, R=R_jup.value, Rsun=8.178,
+def derivativeTDM_wrt_M(r, f, params, M, v, R=R_jup.value, Rsun=8.178,
                         epsilon=1):
     """
     Return (analytical) derivative of DM temperature wrt mass @ 
@@ -45,7 +45,7 @@ def derivativeTDM_wrt_M(r, f, params, M, v=None, R=R_jup.value, Rsun=8.178,
            )
 
 
-def derivativeTDM_wrt_r(r, f, params, M, v=None, R=R_jup.value, Rsun=8.178,
+def derivativeTDM_wrt_r(r, f, params, M, v, R=R_jup.value, Rsun=8.178,
                         epsilon=1):
     """
     Return (analytical) derivative of DM temperature wrt r @ 
@@ -76,6 +76,21 @@ def derivativeTDM_wrt_r(r, f, params, M, v=None, R=R_jup.value, Rsun=8.178,
     
     return(0.25*T_DM*(-params[0]/r - (3-params[0])/(params[1] + r)))
 
+def derivativeTintana_wrt_A(M, A, a, b):
+    """
+    Return (analytical) derivative of interinsic temperature wrt age [K/Gyr]
+    (ATMO temperatures are fitted by a/A^b)
+    
+    Input
+    -----
+        M : mass [Msun]
+        A : age [Gyr]
+        a : =f(M) - interpolation function
+        b : =f(M) - interpolation function
+    """
+    return (-a(M)*b(M)*np.power(A, -b(M)-1))
+
+
 def derivativeTint_wrt_A(M, A, points, values, size=7000, h=0.001):
     """
     Return (numerical) derivative of intrinsic temperature wrt Age [K/Gyr]
@@ -90,8 +105,7 @@ def derivativeTint_wrt_A(M, A, points, values, size=7000, h=0.001):
     xi     = np.transpose(np.asarray([ages, mass]))
     Teff   = griddata(points, values, xi)
     # return
-    return derivative(interp1d(ages, Teff, bounds_error=False, fill_value="extrapolate"), 
-                      A, dx=h)
+    return derivative(interp1d(ages, Teff), A, dx=h)
 
 def derivativeTint_wrt_M(M, A, points, values, size=7000, h=0.001):
     """
@@ -103,12 +117,11 @@ def derivativeTint_wrt_M(M, A, points, values, size=7000, h=0.001):
         A : age [Gyr]
     """   
     ages   = np.ones(size)*A
-    mass   = np.linspace(0.013, 0.075, size)#0.053, size)
+    mass   = np.linspace(0.013, 0.053, size)
     xi     = np.transpose(np.asarray([ages, mass]))
     Teff   = griddata(points, values, xi)
     # return
-    return derivative(interp1d(mass, Teff, bounds_error=False, fill_value="extrapolate"), 
-                      M, dx=h)
+    return derivative(interp1d(mass, Teff), M, dx=h)
 
 
 def derivativeT_wrt_M(r, M, A, Tint, TDM, points, values, f, params,
