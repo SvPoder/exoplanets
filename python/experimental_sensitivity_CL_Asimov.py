@@ -62,7 +62,8 @@ def lnL_sb(gamma, f, rs, robs, sigma_robs, Mobs, sigma_Mobs, Aobs, sigma_Aobs,
                                    f, [gamma, rs, rho0], v=v, R=R, Rsun=Rsun,  
                                    epsilon=epsilon)                            
     # return                                                                   
-    return -0.5*np.sum((Tmodel-Tobs)**2/(sigma_Tobs**2 + _sigma_Tmodel2)) 
+    return -0.5*np.sum(np.log(sigma_Tobs**2 + _sigma_Tmodel2) + 
+                       (Tmodel-Tobs)**2/(sigma_Tobs**2 + _sigma_Tmodel2)) 
 
 
 def lnL_b(sigma_Mobs, sigma_Aobs, Tobs, sigma_Tobs, Tint, dervTint_M, 
@@ -75,7 +76,8 @@ def lnL_b(sigma_Mobs, sigma_Aobs, Tobs, sigma_Tobs, Tint, dervTint_M,
                    np.power(dervTint_M*sigma_Mobs, 2))
     
     # return
-    return -0.5*np.sum((Tint-Tobs)**2/(sigma_Tobs**2 + sigma_Tint2)) 
+    return -0.5*np.sum(np.log(sigma_Tobs**2 + sigma_Tint2) + 
+                       (Tint-Tobs)**2/(sigma_Tobs**2 + sigma_Tint2)) 
 
 
 def TS(gamma, f, rs, robs, sigma_robs, Mobs, sigma_Mobs, Aobs, sigma_Aobs,  
@@ -94,7 +96,7 @@ def TS(gamma, f, rs, robs, sigma_robs, Mobs, sigma_Mobs, Aobs, sigma_Aobs,
             )
 
 def p_value_sb(gamma_k, f, rs, nBDs, relT, relM, relR, relA, points, values,    
-                   TS_obs, steps=300, Tmin=0., v=None, ex="fixedT10v100"):      
+               TS_obs, steps=300, Tmin=0., v=None, ex="fixedT10v100"):      
     """                                                                         
     Return p-value for gamma_k @ (f, rs) under s+b hypothesis                   
     """                                                                         
