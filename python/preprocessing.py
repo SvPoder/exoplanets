@@ -111,12 +111,12 @@ def statistics(filepath, filepath2, ex, nBDs, rel_unc, f, gamma, rs,
     for i in range(rank):
         #print(i+1)
         # load posterior + likelihood
-        file_name  = (filepath + ("N%isigma%.1f/posterior_" %(nBDs, rel_unc))
+        file_name  = (filepath + ("N%isigma%.1fb/posterior_" %(nBDs, rel_unc))
                      + ex + 
                      ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1fv%i" 
                      %(nBDs, rel_unc, f, gamma, rs, i+1)))
         samples    = pickle.load(open(file_name, "rb"))
-        file_name2 = (filepath2 + ("N%isigma%.1f/like_" %(nBDs, rel_unc))
+        file_name2 = (filepath2 + ("N%isigma%.1fb/like_" %(nBDs, rel_unc))
                      + ex +
                      ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1fv%i"
                      %(nBDs, rel_unc, f, gamma, rs, i+1)))
@@ -140,7 +140,7 @@ def statistics(filepath, filepath2, ex, nBDs, rel_unc, f, gamma, rs,
     #hpd_1sigma = np.array(hpd_1sigma)    
     #print(hpd_1sigma.shape)
 
-    filepath = "/home/mariacst/exoplanets/results/velocity/v100/analytic/fixedT10Tcut650_nocutTwn/statistics_"
+    filepath = "/home/mariacst/exoplanets/results/velocity/v100/analytic/fixedT10/statistics_"
     output = open(filepath + ex + ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f" 
                               %(nBDs, rel_unc, f, gamma, rs)), "w")
     for i in range(rank):
@@ -174,18 +174,18 @@ def statistics(filepath, filepath2, ex, nBDs, rel_unc, f, gamma, rs,
 
 if __name__ == '__main__':
     _path     = "/hdfs/local/mariacst/exoplanets/results/"
-    _path_f   = "velocity/v100/analytic/fixedT10Tcut650_nocutTwn/"
+    _path_f   = "velocity/v100/analytic/fixedT10/"
     filepath  = _path + "posterior/" + _path_f
     filepath2 = _path + "likelihood/" + _path_f
-    ex        = "fixedT10v100Tcut650_nocutTwn"
-    N         = 1000#int(sys.argv[2])
+    ex        = "fixedT10v100"
+    N         = 100
     sigma     = float(sys.argv[1])
     #print(N)
     nBDs     = [N]
     rel_unc  = [sigma]
     f        = 1.
-    rs       = [20.]
-    gamma    = [1.5]#0.5, 1., 1.1, 1.2, 1.3, 1.4, 1.5]
+    rs       = [float(sys.argv[2])]
+    gamma    = [0.6, 0.7, 0.8, 0.9]
 
     for N in nBDs:
         for rel in rel_unc:
