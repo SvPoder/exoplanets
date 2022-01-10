@@ -168,8 +168,8 @@ def residual(p):
 
     #print("Sigma Tmodel2: {}".format(_sigma_Tmodel2))
 
-    res = (-0.5*np.sum(np.log(sigmaTobs**2 + _sigma_Tmodel2) +
-                        (Tmodel-Tobs)**2/(sigmaTobs**2 + _sigma_Tmodel2)))
+    #res = (-0.5*np.sum(np.log(sigmaTobs**2 + _sigma_Tmodel2) +
+                        #(Tmodel-Tobs)**2/(sigmaTobs**2 + _sigma_Tmodel2)))
     #print("Residual: {}".format(res))
 
     # return
@@ -197,7 +197,8 @@ nwalkers = 150
 p0 = [[0.9, 0.9, 20.] + 1e-4*np.random.randn(ndim) for j in range(nwalkers)]
 
 # Backend support
-#backend_file = "/scratch/sven/exoplanet_emcee_logs/emcee_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"%(nBDs, sigma, f_true, gamma_true, rs_true)+ "v" + str(rank) + ".h5"
+# TO USE: Uncomment and add 'backend=backend' t0 sampler instantiation below.
+
 # backend_file = "walkers_" + ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"
 #                     %(nBDs, sigma, f_true, gamma_true, rs_true)) + "v" + str(rank) + ".h5"
 # backend = emcee.backends.HDFBackend(backend_file)
