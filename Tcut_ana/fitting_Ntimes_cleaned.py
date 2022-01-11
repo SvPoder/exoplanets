@@ -13,6 +13,8 @@ from astropy.constants import R_jup, M_jup, G, sigma_sb
 import glob
 import pickle
 import time
+from derivatives import derivativeTDM_wrt_M_emcee, derivativeTDM_wrt_r_emcee, derivativeTintana_wrt_A
+from utils import T_DM_optimised, temperature_withDM_optimised, gNFW_rho
 
 start = time.time()
 
@@ -20,8 +22,6 @@ start = time.time()
 rho0                    = 0.42 # Local DM density [GeV/cm3]
 epsilon                 = 1.
 Rsun                    = 8.178 # Sun galactocentric distance [kpc]
-_sigma_sb = sigma_sb.value
-_G        = G.value
 # ============================================================================
 # Input parameters
 ex         = sys.argv[1]
@@ -64,45 +64,6 @@ elapsed = time.time() - start
 print("Input section took " + str(elapsed))
 
 # ---------------------- emcee section ----------------------------------------
-
-from derivatives import derivativeTDM_wrt_M_emcee, derivativeTDM_wrt_r_emcee, derivativeTintana_wrt_A
-from utils import T_DM, temperature_withDM, gNFW_rho, vc
-
-def T_DM_optimised(r, R=R_jup.value, M=M_jup.value, Rsun=8.178, f=1.,
-         params=[1., 20., 0.42], v=None, epsilon=1., gNFW_rho = 0):
-    """
-    DM temperature
-    """
-    # escape velocity
-    vesc   = np.sqrt(2*_G*M/R)*1e-3 # km/s
-    if v:
-        _vD = v
-    else:
-        _vD    = np.sqrt(3/2.)*vc(Rsun, r, params) # km/s
-
-    _vDM   =  np.sqrt(8./(3*np.pi))*_vD # km/s
-    _rhoDM = gNFW_rho # GeV/cm3
-    # return
-    return np.power((f*_rhoDM*_vDM*(1+3./2.*np.power(vesc/_vD, 2))*
-                    conversion_into_w)/(4*_sigma_sb*epsilon), 1./4.)
-
-def temperature_withDM_optimised(r, Tint, R=R_jup.value, M=M_jup.value,
-                       f=1., p=[1., 20., 0.42], v=None, Rsun=8.178, epsilon=1, TDM =0):
-    """
-    Exoplanet temperature : internal heating + DM heating
-    """
-    return (np.power(np.power(Tint, 4) +
-                     np.power(TDM, 4)
-                     , 0.25))
-
-# Constant parameters & conversions ==========================================
-conversion_into_K_vs_kg = 1.60217e-7
-conversion_into_w       = 0.16021766
-conv_Msun_to_kg         = 1.98841e+30 # [kg/Msun]
-rho0                    = 0.42 # Local DM density [GeV/cm3]
-epsilon                 = 1.
-Rsun                    = 8.178 # Sun galactocentric distance [kpc]
-# ============================================================================
 
 def lnprior(p):
     f, gamma, rs = p
@@ -149,34 +110,21 @@ def residual(p):
     f, gamma, rs = p
 
     _gNFW_rho = gNFW_rho(Rsun, robs, [gamma, rs, rho0])
-    print("Params {} {} {}".format(Rsun, robs, [gamma, rs, rho0]))
-    print("NFW: {}".format(_gNFW_rho))
 
-    _TDM = T_DM_optimised(robs, R=R_jup.value, M=Mobs*conv_Msun_to_kg, Rsun=Rsun, f=f,
+    _TDM = T_DM_optimised(robs, R=R_jup.value, M=Mobs, Rsun=Rsun, f=f,
          params=[gamma, rs, rho0], v=v, epsilon=epsilon, gNFW_rho = _gNFW_rho)
-    print("TDM: {}".format(_TDM))
 
     # model temperature [K]
-    Tmodel = temperature_withDM_optimised(robs, Teff, M=Mobs*conv_Msun_to_kg, f=f,
-                                p=[gamma, rs, rho0], v=v, TDM = _TDM)
+    Tmodel = temperature_withDM_optimised(Teff, TDM = _TDM)
 
-    print("Tmodel: {}".format(Tmodel))
     _sigma_Tmodel2 = sigma_Tmodel2(robs, Mobs, Aobs, sigmarobs, sigmaMobs,
                                    sigmaAobs, Teff, points, values,
                                    f, [gamma, rs, rho0], a_interp, b_interp, c_interp, v=v, R=R_jup.value, Rsun=Rsun,
                                    epsilon=epsilon, TDM = _TDM, gNFW_rho = _gNFW_rho)
 
-    print("Sigma Tmodel2: {}".format(_sigma_Tmodel2))
-
-    res = (-0.5*np.sum(np.log(sigmaTobs**2 + _sigma_Tmodel2) +
-                        (Tmodel-Tobs)**2/(sigmaTobs**2 + _sigma_Tmodel2)))
-    print("Residual: {}".format(res))
-
-
+    # return
     return (-0.5*np.sum(np.log(sigmaTobs**2 + _sigma_Tmodel2) +
                         (Tmodel-Tobs)**2/(sigmaTobs**2 + _sigma_Tmodel2)))
-
-
 
 
 def lnprob(p):
@@ -189,7 +137,7 @@ def lnprob(p):
     # Return
     return lp + residual(p)
 
-# ------------------ RECONSTRUCTION --------------------------------------
+
 from multiprocessing import Pool
 ncpu = 6
 ndim     = 3
@@ -197,18 +145,15 @@ nwalkers = 150
 
 # first guess
 p0 = [[0.9, 0.9, 20.] + 1e-4*np.random.randn(ndim) for j in range(nwalkers)]
-lnprob(p0[0])
-exit()
-
 
 # Backend support
 # TO USE: Uncomment and add 'backend=backend' t0 sampler instantiation below.
+# Does not work through slurm
 backend_file = "walkers_" + ex +("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"
                     %(nBDs, sigma, f_true, gamma_true, rs_true)) + "v" + str(rank) + ".h5"
 backend = emcee.backends.HDFBackend(backend_file)
 backend.reset(nwalkers, ndim)
 
-# -------------------------------------------------------------------------
 
 with Pool(ncpu) as pool:
 
@@ -219,14 +164,15 @@ with Pool(ncpu) as pool:
 
     steps = 6000
 
-    #pos, prob, state  = sampler.run_mcmc(p0, 200, progress=False)
-    #sampler.reset()
+    pos, prob, state  = sampler.run_mcmc(p0, 200, progress=False)
+    sampler.reset()
 
     pos, prob, state  = sampler.run_mcmc(p0, steps, progress=True)
 
     elapsed = time.time() - start
     print("Finished v{0} gamma: {1} rs: {2} Emcee took ".format(rank, gamma_true, rs_true) + str(elapsed))
 
+# -------------------------------------------------------------------------
 
 # Save likelihood
 #_path = "/hdfs/local/sven/exoplanets/walkers/"

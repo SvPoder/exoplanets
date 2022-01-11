@@ -68,7 +68,7 @@ p0 = [[0.9, 0.9, 20.] + 1e-4*np.random.randn(ndim) for j in range(nwalkers)]
 
 
 ## Backend
-backend_file = "walkers_" + ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"
+backend_file = "walkers_" + ex + ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"
                     %(nBDs, sigma, f_true, gamma_true, rs_true)) + "v" + str(rank) + ".h5"
 backend = emcee.backends.HDFBackend(backend_file)
 backend.reset(nwalkers, ndim)
@@ -90,7 +90,7 @@ print("Finished v{0} gamma: {1} rs: {2} Emcee took ".format(rank, gamma_true, rs
 
 # Save likelihood
 _path = "/hdfs/local/sven/exoplanets/walkers/"
-
+_path =  "/hdfs/local/sven/exoplanets/repo_test/"
 filepath    = (_path + "like_" + ex)
 file_object = open(filepath + ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"
                     %(nBDs, sigma, f_true, gamma_true, rs_true))

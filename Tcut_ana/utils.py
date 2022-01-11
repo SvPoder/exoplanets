@@ -110,3 +110,32 @@ def temperature(heat, R, epsilon=1):
 def heat(temp, R, epsilon=1):
         return (4*np.pi*R**2*sigma_sb.value*temp**4*epsilon)
 
+#--------- Optimised functions -------------------
+
+def T_DM_optimised(r, R=R_jup.value, M=M_jup.value, Rsun=8.178, f=1.,
+         params=[1., 20., 0.42], v=None, epsilon=1., gNFW_rho = 0):
+    """
+    DM temperature
+    """
+    M=M*conv_Msun_to_kg
+
+    # escape velocity
+    vesc   = np.sqrt(2*_G*M/R)*1e-3 # km/s
+    if v:
+        _vD = v
+    else:
+        _vD    = np.sqrt(3/2.)*vc(Rsun, r, params) # km/s
+
+    _vDM   =  np.sqrt(8./(3*np.pi))*_vD # km/s
+    _rhoDM = gNFW_rho # GeV/cm3
+    # return
+    return np.power((f*_rhoDM*_vDM*(1+3./2.*np.power(vesc/_vD, 2))*
+                    conversion_into_w)/(4*_sigma_sb*epsilon), 1./4.)
+
+def temperature_withDM_optimised(Tint, TDM=0):
+    """
+    Exoplanet temperature : internal heating + DM heating
+    """
+    return (np.power(np.power(Tint, 4) +
+                     np.power(TDM, 4)
+                     , 0.25))

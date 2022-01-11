@@ -66,13 +66,6 @@ def residual(p, robs, sigma_robs, Mobs, sigma_Mobs, Aobs, sigma_Aobs,
                                    sigma_Aobs, Tint, points, values,
                                    f, [gamma, rs, rho0], a, b, c, v)
 
-    #print("Sigma Tmodel2: {}".format(_sigma_Tmodel2))
-
-    res = (-0.5*np.sum(np.log(sigma_Tobs**2 + _sigma_Tmodel2) +
-                        (Tmodel-Tobs)**2/(sigma_Tobs**2 + _sigma_Tmodel2)))
-    #print("Residual: {}".format(res))
-
-
     # return
     return (-0.5*np.sum(np.log(sigma_Tobs**2 + _sigma_Tmodel2) +
                         (Tmodel-Tobs)**2/(sigma_Tobs**2 + _sigma_Tmodel2)))
@@ -88,5 +81,6 @@ def lnprob(p, robs, sigma_robs, Mobs, sigma_Mobs, Aobs, sigma_Aobs,
     # Return
     return lp + residual(p, robs, sigma_robs, Mobs, sigma_Mobs, Aobs, sigma_Aobs,
              Tobs, sigma_Tobs, Tint, points, values, a, b, c, v)
+
 
 
