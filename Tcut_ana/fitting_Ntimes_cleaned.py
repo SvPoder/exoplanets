@@ -4,7 +4,6 @@ sys.path.append("/home/sven/exoplanetenv/lib/python3.6/site-packages")
 import emcee
 import numpy as np
 from scipy.interpolate import griddata, interp1d
-from derivatives import derivativeTint_wrt_A, derivativeTint_wrt_M
 import imp
 import mock_generation
 imp.reload(mock_generation)
