@@ -117,7 +117,7 @@ def derivativeTint_wrt_M(M, A, points, values, size=7000, h=0.001):
         A : age [Gyr]
     """   
     ages   = np.ones(size)*A
-    mass   = np.linspace(0.013, 0.053, size)
+    mass   = np.linspace(0.013, 0.060, size)
     xi     = np.transpose(np.asarray([ages, mass]))
     Teff   = griddata(points, values, xi)
     # return
