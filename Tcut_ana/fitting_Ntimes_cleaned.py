@@ -35,8 +35,8 @@ v          = 100.
 Tcut       = 0.
 # ------------------------------------------------------------------------
 # Load theoretical cooling model
-path = "/home/mariacst/exoplanets/running/data/"
-data = np.genfromtxt(path + "./ATMO_CEQ_vega_MIRI.txt", unpack=True)
+path = "c:/Users/SvenP/source/repos/exoplanets/data/"
+data = np.genfromtxt("c:/Users/SvenP/source/repos/exoplanets/data/ATMO_CEQ_vega_MIRI.txt", unpack=True)
 points = np.transpose(data[0:2, :])
 values = data[2]
 
@@ -95,6 +95,7 @@ def sigma_Tmodel2(r, M, A, sigma_r, sigma_M, sigma_A,
                TDMDivTtot*derivativeTDM_wrt_M_emcee(r, f, params, M, v=v, R=R,
                                                   Rsun=Rsun,epsilon=epsilon, gNFW_rho=gNFW_rho))
     # return
+    # Äkki teine liige siit põhjustab mingit jama
     return (np.power(TintDivTtot*derivativeTintana_wrt_A(M, A, a, b)*sigma_A, 2)+
             np.power(dervT_M*sigma_M, 2)+
             np.power(TDMDivTtot*derivativeTDM_wrt_r_emcee(r, f, params, M, v=v,
@@ -172,10 +173,11 @@ with Pool(ncpu) as pool:
     print("Finished v{0} gamma: {1} rs: {2} Emcee took ".format(rank, gamma_true, rs_true) + str(elapsed))
 
 # -------------------------------------------------------------------------
-
+exit()
 # Save likelihood
-#_path = "/hdfs/local/sven/exoplanets/walkers/"
-_path =  "/hdfs/local/sven/exoplanets/repo_test/"
+
+_path =  "../debug_results/"
+
 filepath    = (_path + "like_" + ex)
 file_object = open(filepath + ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"
                     %(nBDs, sigma, f_true, gamma_true, rs_true))
@@ -184,7 +186,6 @@ pickle.dump(sampler.flatlnprobability, file_object, protocol=2)
 file_object.close()
 
 # Save posterior
-#_path = "/hdfs/local/mariacst/exoplanets/results/posterior/velocity/v100/analytic/fixedT10Tcut650_nocutTwn/"
 filepath    = (_path + "posterior_" + ex)
 file_object2 = open(filepath + ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"
                     %(nBDs, sigma, f_true, gamma_true, rs_true))
@@ -192,3 +193,27 @@ file_object2 = open(filepath + ("_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"
 pickle.dump(sampler.flatchain, file_object2, protocol=2)
 file_object2.close()
 
+
+# Plot and save
+fig, axes = plt.subplots(1, 1, figsize=(5, 5))
+
+axes.set_xlabel(r"$\gamma$")
+
+bin_n=40
+x = binned_statistic(samples1[:, 1], like1, 'max', bins=bin_n)[1]
+y = binned_statistic(samples1[:, 1], like1, 'max', bins=bin_n+1)[0]
+y = y - np.max(y[~np.isnan(y)]) + 1
+axes.plot(x, y, ls="-", color="orange", lw=2.5)
+axes.axvline(samples1[:, 1][np.argmax(like1)], color="orange", ls="--", label="No burn in")
+
+
+axes.set_ylim(-1, 1.5)
+axes.legend(fontsize=16)
+
+axes.set_ylabel(r"-ln($\mathcal{L}$)")
+
+plt.title("Likelihood comparison")
+
+fig_lable = ""
+fig_name = "_N%i_sigma%.1f_f%.1fgamma%.1frs%.1f"%(nBDs, sigma, f_true, gamma_true, rs_true)
+plt.savefig("../debug_results/{}.png".format(fig_name), dpi=150)

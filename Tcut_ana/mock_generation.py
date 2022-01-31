@@ -101,9 +101,12 @@ def mock_population_all(N, relT, relM, relRobs, relA,
     # Mass
     mass = IMF_sampling(-0.6, _N, Mmin=6, Mmax=75) # [Mjup]
     mass = mass*M_jup.value/M_sun.value # [Msun]
+
     # load theoretical BD cooling model - ATMO 2020
     path =  "/home/mariacst/exoplanets/running/data/"
-    data = np.genfromtxt(path + "./ATMO_CEQ_vega_MIRI.txt", unpack=True)
+
+    data = np.genfromtxt("c:/Users/SvenP/source/repos/exoplanets/data/ATMO_CEQ_vega_MIRI.txt", unpack=True)
+
     points = np.transpose(data[0:2, :])
     values = data[2]
     xi = np.transpose(np.asarray([ages, mass]))
