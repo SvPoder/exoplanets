@@ -1,3 +1,5 @@
 logs/
 running/__pycache__/
 running/__pycache__/
+debug_results/
+like_post_data/

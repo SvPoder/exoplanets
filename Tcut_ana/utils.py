@@ -14,10 +14,10 @@ conv_Msun_to_kg         = 1.98841e+30 # [kg/Msun]
 # ============================================================================
 
 def vc(Rsun, Rint, parameters):
-    data = np.genfromtxt("../data/rc_e2bulge_R08.178_J_corr.dat", unpack=True)
+    data = np.genfromtxt("/home/svenpoder/repos/exoplanets-1/data/rc_e2bulge_R08.178_J_corr.dat", unpack=True)
     r = data[0]
     vB = data[1]
-    data = np.genfromtxt("../data/rc_hgdisc_R08.178_corr.dat", unpack=True)
+    data = np.genfromtxt("/home/svenpoder/repos/exoplanets-1/data/rc_hgdisc_R08.178_corr.dat", unpack=True)
     vD = data[1]
     vDM = vgNFW(Rsun, r, parameters)
     vtot = np.sqrt(np.power(vB, 2) + np.power(vD, 2)+ np.power(vDM, 2))
@@ -82,6 +82,7 @@ def T_DM(r, R=R_jup.value, M=M_jup.value, Rsun=8.178, f=1.,
     """
     # escape velocity
     vesc   = np.sqrt(2*_G*M/R)*1e-3 # km/s
+
     if v:
         _vD = v
     else:

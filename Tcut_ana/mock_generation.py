@@ -91,9 +91,12 @@ def mock_population_all(N, relT, relM, relRobs, relA,
     5) Tobs has relative uncertainty rel_unc_Tobs
     6) Estimated masses have an uncertainty of rel_mass
     """
+
     #np.random.seed(42)
     #print(Tmin)
+
     _N = int(8.5*N)
+
     # galactocentric radius of simulated exoplanets
     r_obs = spatial_sampling(_N)
     # Age
@@ -103,37 +106,47 @@ def mock_population_all(N, relT, relM, relRobs, relA,
     mass = mass*M_jup.value/M_sun.value # [Msun]
 
     # load theoretical BD cooling model - ATMO 2020
-    path =  "/home/mariacst/exoplanets/running/data/"
+    path =  "/home/svenpoder/repos/exoplanets-1/data/"
 
-    data = np.genfromtxt("c:/Users/SvenP/source/repos/exoplanets/data/ATMO_CEQ_vega_MIRI.txt", unpack=True)
+    data = np.genfromtxt(path + "ATMO_CEQ_vega_MIRI.txt", unpack=True)
 
     points = np.transpose(data[0:2, :])
     values = data[2]
-    xi = np.transpose(np.asarray([ages, mass]))
 
+    xi = np.transpose(np.asarray([ages, mass]))
     Teff     = griddata(points, values, xi)
+
     # Observed velocity (internal heating + DM)
     Tobs = temperature_withDM(r_obs, Teff, R=R_jup.value,
                            M=mass*M_sun.value,
                            f=f_true, p=[gamma_true, rs_true, rho0_true],
                            v=v)
+
     # add Gaussian noise
     Tobs_wn = Tobs + np.random.normal(loc=0, scale=(relT*Tobs), size=_N)
     mass_wn = mass + np.random.normal(loc=0, scale=(relM*mass), size=_N)
     robs_wn = r_obs + np.random.normal(loc=0, scale=(relRobs*r_obs), size=_N)
     ages_wn = ages + np.random.normal(loc=0, scale=(relA*ages), size=_N)
+
     # select only those objects with masses between 14 and 55 Mjup and T > Tmin
     pos  = np.where((mass_wn > 0.015) & (mass_wn < 0.051) & # 16 - 53 Mjup!
                     (Tobs > Tmin) &
                     (robs_wn > 0.1) & (robs_wn < 1.) &
                     (ages_wn > 1.002) & (ages_wn < 9.998))
+
     #print("Tmin = ", Tmin, len(pos[0]))
     if len(pos[0]) < N:
         sys.exit("Less objects than required!")
+
     #return
+    # return (robs_wn[pos][:N], relRobs*r_obs[pos][:N],
+    #         Tobs_wn[pos][:N], relT*Tobs[pos][:N],
+    #         mass_wn[pos][:N], relM*mass[pos][:N],
+    #         ages_wn[pos][:N], relA*ages[pos][:N])
+
     return (robs_wn[pos][:N], relRobs*r_obs[pos][:N],
             Tobs_wn[pos][:N], relT*Tobs[pos][:N],
-            mass_wn[pos][:N], relM*mass[pos][:N],
+            mass[pos][:N], relM*mass[pos][:N],
             ages_wn[pos][:N], relA*ages[pos][:N])
 
 def mock_population_check(N, sigmaTobs, relM, relR, relA,
