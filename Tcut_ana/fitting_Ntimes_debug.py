@@ -93,11 +93,11 @@ def sigma_Tmodel2(r, M, A, sigma_r, sigma_M, sigma_A,
     TintDivTtot = (Tint/Ttot)**3
     TDMDivTtot = (_TDM/Ttot)**3
 
-    # dervT_M = (TintDivTtot* c(A) +
-    #            TDMDivTtot*derivativeTDM_wrt_M_emcee(r, f, params, M, v=v, R=R,
-    #                                               Rsun=Rsun,epsilon=epsilon, gNFW_rho=gNFW_rho))
+    dervT_M = (TintDivTtot* c(A) +
+               TDMDivTtot*derivativeTDM_wrt_M_emcee(r, f, params, M, v=v, R=R,
+                                                  Rsun=Rsun,epsilon=epsilon, gNFW_rho=gNFW_rho))
 
-    dervT_M = 0
+    #dervT_M = 0
 
     return (np.power(TintDivTtot*derivativeTintana_wrt_A(M, A, a, b)*sigma_A, 2)+
             np.power(dervT_M*sigma_M, 2)+
