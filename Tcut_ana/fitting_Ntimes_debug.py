@@ -39,7 +39,7 @@ v          = 100.
 Tcut       = 650.
 # ------------------------------------------------------------------------
 # Load theoretical cooling model
-path = "/home/svenpoder/repos/exoplanets-1/data/"
+path = "/home/sven/repos/exoplanets-1/data/"
 data = np.genfromtxt(path+"ATMO_CEQ_vega_MIRI.txt", unpack=True)
 points = np.transpose(data[0:2, :])
 values = data[2]
@@ -119,10 +119,12 @@ def residual(p):
     # model temperature [K]
     Tmodel = temperature_withDM_optimised(Teff, TDM = _TDM)
 
-    _sigma_Tmodel2 = sigma_Tmodel2(robs, Mobs, Aobs, sigmarobs, sigmaMobs,
-                                   sigmaAobs, Teff, points, values,
-                                   f, [gamma, rs, rho0], a_interp, b_interp, c_interp, v=v, R=R_jup.value, Rsun=Rsun,
-                                   epsilon=epsilon, TDM = _TDM, gNFW_rho = _gNFW_rho)
+    # _sigma_Tmodel2 = sigma_Tmodel2(robs, Mobs, Aobs, sigmarobs, sigmaMobs,
+    #                                sigmaAobs, Teff, points, values,
+    #                                f, [gamma, rs, rho0], a_interp, b_interp, c_interp, v=v, R=R_jup.value, Rsun=Rsun,
+    #                                epsilon=epsilon, TDM = _TDM, gNFW_rho = _gNFW_rho)
+
+    _sigma_Tmodel2 = 0
 
     # return
     return (-0.5*np.sum(np.log(sigmaTobs**2 + _sigma_Tmodel2) +
@@ -144,7 +146,7 @@ nwalkers = 10
 # first guess
 p0 = [[0.9, 0.9, 20.] + 1e-4*np.random.randn(ndim) for j in range(nwalkers)]
 
-debug_results_path = "/home/svenpoder/repos/exoplanets-1/debug_results/" + ex + "/"
+debug_results_path = "/home/sven/repos/exoplanets-1/debug_results/" + ex + "/"
 os.makedirs(debug_results_path, exist_ok=True)
 
 # Emcee backend support
@@ -176,7 +178,7 @@ with Pool(ncpu) as pool:
 # -------------------------------------------------------------------------
 
 # Save likelihood
-_path =  "/home/svenpoder/repos/exoplanets-1/like_post_data/" + ex + "/"
+_path =  "/home/sven/repos/exoplanets-1/like_post_data/" + ex + "/"
 
 os.makedirs(_path, exist_ok=True)
 

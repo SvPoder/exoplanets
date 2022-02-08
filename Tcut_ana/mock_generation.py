@@ -92,8 +92,9 @@ def mock_population_all(N, relT, relM, relRobs, relA,
     6) Estimated masses have an uncertainty of rel_mass
     """
 
+
     #np.random.seed(42)
-    #print(Tmin)
+    print(Tmin)
 
     _N = int(8.5*N)
 
@@ -106,7 +107,7 @@ def mock_population_all(N, relT, relM, relRobs, relA,
     mass = mass*M_jup.value/M_sun.value # [Msun]
 
     # load theoretical BD cooling model - ATMO 2020
-    path =  "/home/svenpoder/repos/exoplanets-1/data/"
+    path =  "/home/sven/repos/exoplanets-1/data/"
 
     data = np.genfromtxt(path + "ATMO_CEQ_vega_MIRI.txt", unpack=True)
 
@@ -146,11 +147,11 @@ def mock_population_all(N, relT, relM, relRobs, relA,
     #         mass_wn[pos][:N], relM*mass[pos][:N],
     #         ages_wn[pos][:N], relA*ages[pos][:N])
 
-    # Return m true
-    return (robs_wn[pos][:N], relRobs*r_obs[pos][:N],
-            Tobs_wn[pos][:N], relT*Tobs[pos][:N],
+    # Return all true
+    return (r_obs[pos][:N], relRobs*r_obs[pos][:N],
+            Tobs[pos][:N], relT*Tobs[pos][:N],
             mass[pos][:N], relM*mass[pos][:N],
-            ages_wn[pos][:N], relA*ages[pos][:N])
+            ages[pos][:N], relA*ages[pos][:N])
 
 
 
